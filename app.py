@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-# Import functions from your utility files. We'll build these next!
-# from utils.api_handler import generate_content
+# Import functions from your utility files.
+from utils.api_handler import generate_content
 # from utils.calculations import calculate_sample_size, calculate_duration
 # from utils.pdf_generator import create_pdf
 
@@ -114,6 +114,9 @@ if "prd_data" not in st.session_state:
         "prd_sections": {},
         "calculations": {}
     }
+# State to track which section is being edited
+if "editing_section" not in st.session_state:
+    st.session_state.editing_section = None
 
 # --- Helper Functions for Navigation ---
 def next_stage():
@@ -128,11 +131,45 @@ def back_stage():
     if current_index > 0:
         st.session_state.stage = STAGES[current_index - 1]
 
+def set_editing_section(section_title):
+    """Sets the current section for editing."""
+    st.session_state.editing_section = section_title
+
+def save_edit(section_title, edited_text):
+    """Saves the edited text for a specific section."""
+    st.session_state.prd_data["prd_sections"][section_title] = edited_text
+    st.session_state.editing_section = None # Hide the text area
+    st.success(f"Changes to '{section_title}' saved!")
+
+def format_content_for_display(content):
+    """
+    Formats content for display based on its type.
+    Handles lists for bullet points and dictionaries for structured content.
+    """
+    if isinstance(content, list):
+        return "\n".join([f"- {item}" for item in content])
+    elif isinstance(content, dict):
+        formatted_str = ""
+        for key, value in content.items():
+            formatted_str += f"\n**{key}**:\n"
+            if isinstance(value, list):
+                bullet_list = "\n".join([f"- {item}" for item in value])
+                formatted_str += f"{bullet_list}\n"
+            else:
+                formatted_str += f"{value}\n"
+        return formatted_str
+    else:
+        return content
+
+
 # --- UI Rendering Functions for Each Stage ---
 def render_intro_page():
     """Renders the initial form for gathering business context."""
     st.header("Step 1: The Basics 📝")
     st.write("Please provide some high-level details about your A/B test.")
+    
+    # New section to input API Key
+    st.session_state.api_key = st.text_input("Enter your Groq API Key", type="password")
 
     with st.form("intro_form"):
         st.subheader("Business & Product Details")
@@ -174,28 +211,16 @@ def render_intro_page():
 
         submit_button = st.form_submit_button("Generate Hypotheses")
         if submit_button:
-            if all(v for v in st.session_state.prd_data["intro_data"].values()):
-                st.session_state.hypotheses = {
-                    "Hypothesis 1": {
-                        "Statement": "Changing the login button to a vibrant red will increase login rate.",
-                        "Rationale": "Red is a color that often signifies urgency and action.",
-                        "Behavioral Basis": "Color psychology influences user behavior.",
-                        "Implementation Steps": "Update button CSS to color: red."
-                    },
-                    "Hypothesis 2": {
-                        "Statement": "Adding a progress bar to the onboarding flow will increase login rate.",
-                        "Rationale": "Users are more likely to complete a task if they can see their progress.",
-                        "Behavioral Basis": "The Zeigarnik effect states that people remember unfinished tasks more than finished ones.",
-                        "Implementation Steps": "Add a progress bar component to the top of the onboarding screens."
-                    },
-                    "Hypothesis 3": {
-                        "Statement": "Simplifying the sign-up form by removing the optional 'phone number' field will reduce friction and increase login rate.",
-                        "Rationale": "A shorter form requires less effort from the user, reducing the cognitive load.",
-                        "Behavioral Basis": "The Fitts's Law principle suggests that the time to acquire a target is a function of the distance to and size of the target. Simplifying the form reduces the 'distance' to completion.",
-                        "Implementation Steps": "Remove the optional phone number field from the sign-up form."
-                    }
-                }
-                next_stage()
+            if not st.session_state.api_key:
+                st.error("Please provide your Groq API Key to proceed.")
+            elif all(v for v in st.session_state.prd_data["intro_data"].values()):
+                with st.spinner("Generating hypotheses..."):
+                    hypotheses = generate_content(st.session_state.api_key, st.session_state.prd_data["intro_data"], "hypotheses")
+                    if "error" in hypotheses:
+                        st.error(hypotheses["error"])
+                    else:
+                        st.session_state.hypotheses = hypotheses
+                        next_stage()
             else:
                 st.error("Please fill out all the fields to continue.")
 
@@ -209,34 +234,37 @@ def render_hypothesis_page():
     
     for i, (name, data) in enumerate(st.session_state.hypotheses.items()):
         with cols[i]:
-            st.container(border=True)
-            st.subheader("Hypothesis Statement")
-            st.markdown(data["Statement"])
-            st.subheader("Rationale")
-            st.markdown(data["Rationale"])
-            st.subheader("Behavioral Basis")
-            st.markdown(data["Behavioral Basis"])
-            st.subheader("Implementation Steps")
-            st.markdown(data["Implementation Steps"])
-            if st.button(f"Select {name}", key=f"select_{i}"):
-                st.session_state.prd_data["hypothesis"] = data
-                st.success(f"You have selected: {data['Statement']}")
-                st.session_state.hypotheses_selected = True
+            with st.container(border=True):
+                st.subheader("Hypothesis Statement")
+                st.markdown(data["Statement"])
+                st.subheader("Rationale")
+                st.markdown(data["Rationale"])
+                st.subheader("Behavioral Basis")
+                st.markdown(data["Behavioral Basis"])
+                st.subheader("Implementation Steps")
+                st.markdown(data["Implementation Steps"])
+                if st.button(f"Select {name}", key=f"select_{i}"):
+                    st.session_state.prd_data["hypothesis"] = data
+                    st.success(f"You have selected: {data['Statement']}")
+                    st.session_state.hypotheses_selected = True
 
     st.write("---")
     st.subheader("Or, Write Your Own Hypothesis")
     custom_hypothesis = st.text_area("Your Custom Hypothesis", placeholder="e.g., I hypothesize that...")
     if st.button("Generate from Custom"):
-        if custom_hypothesis:
-            enriched_data = {
-                "Statement": custom_hypothesis,
-                "Rationale": "Rationale for your custom hypothesis.",
-                "Behavioral Basis": "Behavioral basis for your custom hypothesis.",
-                "Implementation Steps": "Implementation steps for your custom hypothesis."
-            }
-            st.session_state.prd_data["hypothesis"] = enriched_data
-            st.session_state.hypotheses_selected = True
-            st.success("Your custom hypothesis has been generated!")
+        if not st.session_state.api_key:
+            st.error("Please provide your Groq API Key to proceed.")
+        elif custom_hypothesis:
+            with st.spinner("Generating from custom hypothesis..."):
+                enriched_data = generate_content(st.session_state.api_key, custom_hypothesis, "enrich_hypothesis")
+                if "error" in enriched_data:
+                    st.error(enriched_data["error"])
+                else:
+                    st.session_state.prd_data["hypothesis"] = enriched_data
+                    st.session_state.hypotheses_selected = True
+                    st.success("Your custom hypothesis has been generated!")
+        else:
+            st.error("Please write a hypothesis to generate from.")
     
     st.write("---")
     if st.button("Continue to PRD Draft"):
@@ -250,22 +278,43 @@ def render_prd_page():
     st.header("Step 3: PRD Draft ✍️")
     st.write("We've drafted the core sections of your PRD. Please edit and finalize them.")
     
-    if "prd_sections" not in st.session_state.prd_data["prd_sections"]:
-        st.session_state.prd_data["prd_sections"] = {
-            "Problem Statement": "The problem we are addressing is...",
-            "Risks & Assumptions": "We assume that... and we face risks like...",
-            "Secondary & Hygiene Metrics": "We will also monitor metrics like...",
-            "Next Steps": "After the test, we will..."
-        }
+    if not st.session_state.prd_data.get("prd_sections"):
+        with st.spinner("Drafting PRD sections..."):
+            prd_sections = generate_content(st.session_state.api_key, st.session_state.prd_data["hypothesis"], "prd_sections")
+            if "error" in prd_sections:
+                st.error(prd_sections["error"])
+            else:
+                st.session_state.prd_data["prd_sections"] = prd_sections
+                st.session_state.editing_section = None # Initialize editing state
 
     for section_title, content in st.session_state.prd_data["prd_sections"].items():
-        st.session_state.prd_data["prd_sections"][section_title] = st.text_area(
-            f"**{section_title}**",
-            value=content,
-            height=200,
-            key=section_title
-        )
+        with st.container(border=True):
+            col1, col2 = st.columns([1, 10])
+            with col1:
+                if st.session_state.editing_section != section_title:
+                    if st.button("✏️", key=f"edit_{section_title}"):
+                        set_editing_section(section_title)
+                        st.rerun()
+            with col2:
+                st.subheader(f"**{section_title}**")
+            
+            # Display formatted content if not in edit mode
+            if st.session_state.editing_section != section_title:
+                st.markdown(format_content_for_display(content))
+            else:
+                # Show editable text area if in edit mode
+                # The text area value is also formatted for a clean editing experience
+                edited_text = st.text_area(
+                    "Edit this section",
+                    value=format_content_for_display(content),
+                    height=200,
+                    key=f"text_area_{section_title}"
+                )
+                if st.button("Save Changes", key=f"save_{section_title}"):
+                    save_edit(section_title, edited_text)
+                    st.rerun()
 
+    st.write("---")
     if st.button("Save & Continue to Calculations"):
         next_stage()
 
@@ -279,6 +328,14 @@ def render_calculations_page():
     current_value = intro_data.get("current_value", 50.0)
     target_value = intro_data.get("target_value", 55.0)
 
+    # Display key metrics from Step 1
+    st.subheader("Key Metrics")
+    st.markdown(f"**Key Metric:** {intro_data.get('key_metric', 'N/A')}")
+    st.markdown(f"**Current Value:** {intro_data.get('current_value', 'N/A')}%")
+    st.markdown(f"**Daily Active Users (DAU):** {intro_data.get('dau', 'N/A')}")
+    
+    st.write("---")
+    st.subheader("Experiment Parameters")
     col1, col2 = st.columns(2)
     with col1:
         st.session_state.prd_data["calculations"]["confidence"] = st.slider(
@@ -297,8 +354,29 @@ def render_calculations_page():
             step=0.01,
             help="The probability of avoiding a false negative."
         )
+        st.session_state.prd_data["calculations"]["coverage"] = st.slider(
+            "Coverage (%)",
+            min_value=5,
+            max_value=100,
+            value=50,
+            step=5,
+            help="The percentage of DAU included in the experiment."
+        )
+
+    with col2:
+        st.session_state.prd_data["calculations"]["min_detectable_effect"] = st.number_input(
+            "Minimum Detectable Effect (%)",
+            min_value=0.0,
+            value=5.0,
+            help="The smallest effect size you want to detect."
+        )
+        # Display Current Metric Value as non-editable text
+        st.number_input("Current Value of Metric (%)", value=current_value, disabled=True)
+        st.number_input("Number of Variants", value=2, disabled=True)
+        
 
     if st.button("Calculate"):
+        # This will be replaced by the actual function call later
         sample_size_per_variant = 1922
         duration_in_days = 1
 
@@ -340,7 +418,8 @@ def render_final_review_page():
     st.subheader("3.0 PRD Sections")
     for section_title, content in prd['prd_sections'].items():
         st.subheader(f"**{section_title}**")
-        st.markdown(content)
+        st.markdown(format_content_for_display(content))
+
 
     st.subheader("4.0 Experiment Plan")
     st.markdown(f"**Confidence Level:** {prd['calculations'].get('confidence', 'N/A')}")

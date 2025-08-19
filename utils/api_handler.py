@@ -31,7 +31,8 @@ def generate_content(api_key, data, mode="hypotheses"):
         # --- Build Prompt based on mode ---
         if mode == "hypotheses":
             user_prompt = f"""
-            Based on the A/B test inputs, generate 2 strong hypotheses.
+            Based on the A/B test inputs, generate 3 strong hypotheses.You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
+            For each input think deeply and give highly perosnalised response to the inputs.            
             Inputs: {json.dumps(data, indent=2)}
             Each hypothesis should be a JSON object with "Statement", "Rationale", and "Behavioral Basis".
             Return a single JSON object with keys "Hypothesis 1" and "Hypothesis 2".
@@ -39,6 +40,9 @@ def generate_content(api_key, data, mode="hypotheses"):
         elif mode == "prd_sections":
             # FIX: Re-engineered prompt to enforce clean keys AND structured values (like lists for plans).
             user_prompt = f"""
+            You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
+            For each input think deeply and give highly perosnalised response to the inputs.
+            Inputs: {json.dumps(data, indent=2)}
             Draft PRD sections for this hypothesis: {json.dumps(data, indent=2)}
             You MUST return a single JSON object. 
             The keys of this object MUST be exactly "Problem_Statement", "Goal_and_Success_Metrics", and "Implementation_Plan".
@@ -47,11 +51,16 @@ def generate_content(api_key, data, mode="hypotheses"):
             """
         elif mode == "enrich_hypothesis":
             user_prompt = f"""
+            You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
+            For each input think deeply and give highly perosnalised response to the inputs.
+            Inputs: {json.dumps(data, indent=2)}
             Enrich this custom hypothesis: "{data}"
             Return JSON with: "Statement", "Rationale", "Behavioral Basis".
             """
         elif mode == "risks":
             user_prompt = f"""
+            You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
+            For each input think deeply and give highly perosnalised response to the inputs.
             Analyze the following A/B test idea and identify 3 potential risks.
             Business Goal: {data.get("business_goal")}
             Hypothesis: {data.get("hypothesis")}

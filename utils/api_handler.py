@@ -38,12 +38,10 @@ def generate_content(api_key, data, mode="hypotheses"):
             Return a single JSON object with keys "Hypothesis 1" and "Hypothesis 2".
             """
         elif mode == "prd_sections":
-            # FIX: Re-engineered prompt to enforce clean keys AND structured values (like lists for plans).
             user_prompt = f"""
             You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
             For each input think deeply and give highly perosnalised response to the inputs.
-            Inputs: {json.dumps(data, indent=2)}
-            Draft PRD sections for this hypothesis: {json.dumps(data, indent=2)}
+            Draft PRD sections for this hypothesis and context: {json.dumps(data, indent=2)}
             You MUST return a single JSON object. 
             The keys of this object MUST be exactly "Problem_Statement", "Goal_and_Success_Metrics", and "Implementation_Plan".
             The value for "Problem_Statement" and "Goal_and_Success_Metrics" should be a string.
@@ -52,18 +50,28 @@ def generate_content(api_key, data, mode="hypotheses"):
         elif mode == "enrich_hypothesis":
             user_prompt = f"""
             You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
-            For each input think deeply and give highly perosnalised response to the inputs.
-            Inputs: {json.dumps(data, indent=2)}
-            Enrich this custom hypothesis: "{data}"
-            Return JSON with: "Statement", "Rationale", "Behavioral Basis".
+            Enrich this custom hypothesis: "{data.get('custom_hypothesis')}"
+            Use the following context to make it more specific and relevant.
+            Context: {json.dumps(data, indent=2)}
+            Return JSON with: "Statement", "Rationale", "Behavioral Basis". The "Statement" should be the enriched version of the custom hypothesis.
             """
         elif mode == "risks":
+            optional_context = ""
+            if data.get("user_persona"):
+                optional_context += f"\\n- Target User Persona: {data['user_persona']}"
+            if data.get("app_description"):
+                optional_context += f"\\n- App Description: {data['app_description']}"
+            
+            if optional_context:
+                optional_context = f"\\nAdditional Context:\\n{optional_context}"
+
             user_prompt = f"""
             You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
             For each input think deeply and give highly perosnalised response to the inputs.
             Analyze the following A/B test idea and identify 3 potential risks.
             Business Goal: {data.get("business_goal")}
             Hypothesis: {data.get("hypothesis")}
+            {optional_context}
             Return a JSON object with a single key "risks", which is a list of objects.
             Each object in the list should have two keys: "risk" and "mitigation".
             Example: {{"risks": [{{"risk": "...", "mitigation": "..."}}]}}

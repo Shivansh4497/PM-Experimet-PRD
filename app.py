@@ -170,21 +170,14 @@ def next_stage():
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]
 
-def back_stage():
-    """Navigates to the previous stage in the process."""
-    current_index = STAGES.index(st.session_state.stage)
-    if current_index > 0:
-        st.session_state.stage = STAGES[current_index - 1]
-
 def set_stage(stage_name):
     """Sets the current stage directly."""
     if stage_name in STAGES:
         st.session_state.stage = stage_name
 
 def set_editing_section(section_title):
-    """Sets the currently edited PRD section, clearing risk editing."""
+    """Sets the currently edited PRD section to trigger the modal."""
     st.session_state.editing_section = section_title
-    st.session_state.editing_risk = None
 
 def set_editing_risk(risk_index):
     """Sets the currently edited risk, clearing section editing."""
@@ -192,7 +185,7 @@ def set_editing_risk(risk_index):
     st.session_state.editing_section = None
 
 def save_edit(section_title):
-    """Saves changes to a PRD section from its text area."""
+    """Saves changes to a PRD section from its text area in the modal."""
     edited_text = st.session_state[f"text_area_{section_title}"]
     original_content = st.session_state.prd_data["prd_sections"][section_title]
     if isinstance(original_content, list):
@@ -200,22 +193,19 @@ def save_edit(section_title):
     else:
         st.session_state.prd_data["prd_sections"][section_title] = edited_text
     
-    st.session_state.editing_section = None
+    st.session_state.editing_section = None # Close the modal
     cleaned_label = str(section_title).replace("_", " ").title()
     st.success(f"Changes to '{cleaned_label}' saved!")
 
-def save_review_edit(section_title):
-    """Saves changes to a PRD section from the review page."""
-    edited_text = st.session_state[f"text_area_review_{section_title}"]
-    save_edit(section_title) # Re-use the main save logic
-
-def save_risk_edit(risk_index, edited_risk, edited_mitigation):
-    """Saves changes to a specific risk."""
+def save_risk_edit(risk_index):
+    """Saves changes to a specific risk from the dialog."""
+    edited_risk = st.session_state[f"text_area_risk_{risk_index}"]
+    edited_mitigation = st.session_state[f"text_area_mitigation_{risk_index}"]
     st.session_state.prd_data["risks"][risk_index] = {
         "risk": edited_risk,
         "mitigation": edited_mitigation
     }
-    st.session_state.editing_risk = None
+    st.session_state.editing_risk = None # Close the modal
     st.success(f"Changes to Risk {risk_index + 1} saved!")
 
 def format_content_for_display(content):
@@ -224,6 +214,45 @@ def format_content_for_display(content):
         return "\n".join([f"- {item}" for item in content])
     else:
         return str(content)
+
+@st.dialog("Edit Section")
+def edit_section_dialog(section_title):
+    """A dialog to edit a PRD section."""
+    content = st.session_state.prd_data["prd_sections"][section_title]
+    cleaned_label = section_title.replace("_", " ").title()
+    
+    st.text_area(
+        f"Edit {cleaned_label}",
+        value=format_content_for_display(content),
+        height=300,
+        key=f"text_area_{section_title}"
+    )
+    st.caption("You can use Markdown for formatting (e.g., **bold**, *italics*, - lists).")
+    if st.button("Save Changes", key=f"save_dialog_{section_title}"):
+        save_edit(section_title)
+        st.rerun()
+
+@st.dialog("Edit Risk")
+def edit_risk_dialog(risk_index):
+    """A dialog to edit a risk and its mitigation."""
+    risk_item = st.session_state.prd_data["risks"][risk_index]
+    
+    st.text_area(
+        "Risk",
+        value=risk_item['risk'],
+        height=100,
+        key=f"text_area_risk_{risk_index}"
+    )
+    st.text_area(
+        "Mitigation",
+        value=risk_item['mitigation'],
+        height=100,
+        key=f"text_area_mitigation_{risk_index}"
+    )
+
+    if st.button("Save Changes", key=f"save_dialog_risk_{risk_index}"):
+        save_risk_edit(risk_index)
+        st.rerun()
 
 # --- UI Rendering Functions ---
 
@@ -248,6 +277,8 @@ def render_intro_page():
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value
         st.session_state.prd_data["intro_data"]["dau"] = st.session_state.intro_dau
         st.session_state.prd_data["intro_data"]["product_type"] = st.session_state.intro_product_type
+        st.session_state.prd_data["intro_data"]["user_persona"] = st.session_state.intro_user_persona
+        st.session_state.prd_data["intro_data"]["app_description"] = st.session_state.intro_app_description
         if st.session_state.intro_metric_type == "Continuous":
             st.session_state.prd_data["intro_data"]["std_dev"] = st.session_state.intro_std_dev
         
@@ -276,16 +307,22 @@ def render_intro_page():
         with col1:
             st.text_input("Business Goal", placeholder="e.g., Increase user engagement", key="intro_business_goal")
             st.text_input("Key Metric", placeholder="e.g., Login Rate, ARPDAU", key="intro_key_metric")
-            st.selectbox("Metric Type", ["Proportion", "Continuous"], help="Proportion for percentages (e.g., CTR), Continuous for averages (e.g., ARPDAU).", key="intro_metric_type")
+            st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type",
+                         help="Proportion metrics are percentages (e.g., Conversion Rate, Click-Through Rate). Continuous metrics are numerical averages (e.g., Average Revenue Per Daily Active User, time on page).")
             st.number_input("Current Metric Value", min_value=0.0, value=50.0, help="The current value of your key metric.", key="intro_current_value")
             if st.session_state.intro_metric_type == "Continuous":
-                st.number_input("Standard Deviation", min_value=0.0, value=10.0, help="The standard deviation of your key metric.", key="intro_std_dev")
+                st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev",
+                                help="The standard deviation measures the dispersion of your data around the mean. You can typically find this in your analytics dashboard or by calculating it from historical data.")
 
         with col2:
             st.text_input("Product Area", placeholder="e.g., Mobile App Onboarding", key="intro_product_area")
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, help="The value you are aiming for.", key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, help="The total number of unique users daily.", key="intro_dau")
             st.selectbox("Product Type", ["SaaS Product", "Mobile App", "Web Platform", "Other"], index=1, key="intro_product_type")
+
+        st.subheader("Optional Context")
+        st.text_area("Target User Persona (Optional)", placeholder="e.g., Tech-savvy millennials who value convenience...", key="intro_user_persona")
+        st.text_area("App Description (Optional)", placeholder="e.g., A mobile app that helps users track their daily water intake...", key="intro_app_description")
 
         st.form_submit_button("Generate Hypotheses", on_click=process_intro_form)
 
@@ -370,15 +407,18 @@ def render_prd_page():
     
     if "prd_sections" not in st.session_state.prd_data or not st.session_state.prd_data["prd_sections"]:
         with st.spinner("Drafting PRD sections..."):
+            prd_context = {
+                **st.session_state.prd_data["intro_data"],
+                **st.session_state.prd_data["hypothesis"]
+            }
             raw_prd_sections = generate_content(
                 st.session_state.api_key,
-                st.session_state.prd_data["hypothesis"],
+                prd_context,
                 "prd_sections"
             )
             if "error" in raw_prd_sections:
                 st.error(raw_prd_sections["error"])
             else:
-                # A more robust way to map potentially mislabeled keys
                 clean_prd_sections = {}
                 key_map = {
                     "problem": "Problem_Statement", "problem_statement": "Problem_Statement",
@@ -390,7 +430,6 @@ def render_prd_page():
                     if clean_key:
                         clean_prd_sections[clean_key] = value
                 st.session_state.prd_data["prd_sections"] = clean_prd_sections
-                st.session_state.editing_section = None
 
     ordered_keys = ["Problem_Statement", "Goal_and_Success_Metrics", "Implementation_Plan"]
     prd_sections = st.session_state.prd_data.get("prd_sections", {})
@@ -399,6 +438,10 @@ def render_prd_page():
         if key in prd_sections:
             content = prd_sections[key]
             cleaned_label = key.replace("_", " ").title()
+
+            if st.session_state.editing_section == key:
+                edit_section_dialog(key)
+
             with st.container(border=True):
                 col1, col2 = st.columns([10, 1])
                 with col1:
@@ -406,17 +449,7 @@ def render_prd_page():
                 with col2:
                     st.button("✏️", key=f"edit_{key}", on_click=set_editing_section, args=(key,))
                 
-                if st.session_state.editing_section != key:
-                    st.markdown(format_content_for_display(content))
-                else:
-                    st.text_area(
-                        f"Edit {cleaned_label}",
-                        value=format_content_for_display(content),
-                        height=300,
-                        key=f"text_area_{key}"
-                    )
-                    st.caption("You can use Markdown for formatting (e.g., **bold**, *italics*, - lists).")
-                    st.button("Save Changes", key=f"save_{key}", on_click=save_edit, args=(key,))
+                st.markdown(format_content_for_display(content))
 
     st.write("---")
     st.button("Save & Continue to Calculations", on_click=next_stage, key="to_calcs")
@@ -506,6 +539,10 @@ def render_final_review_page():
         st.markdown(f"**Business Goal:** {prd['intro_data'].get('business_goal', 'N/A')}")
         st.markdown(f"**Hypothesis:** {prd['hypothesis'].get('Statement', 'N/A')}")
         st.markdown(f"**Success Criteria:** Target {prd['intro_data'].get('key_metric', 'N/A')} → {prd['intro_data'].get('target_value', 'N/A')}")
+        if prd['intro_data'].get('user_persona'):
+            st.markdown(f"**Target User Persona:** {prd['intro_data']['user_persona']}")
+        if prd['intro_data'].get('app_description'):
+            st.markdown(f"**App Description:** {prd['intro_data']['app_description']}")
 
     # --- Section 2: PRD Sections ---
     st.subheader("PRD Sections")
@@ -518,6 +555,9 @@ def render_final_review_page():
             if key in prd_sections:
                 content = prd_sections[key]
                 display_label = key.replace("_", " ").title()
+
+                if st.session_state.editing_section == key:
+                    edit_section_dialog(key)
                 
                 with st.container(border=True):
                     col1, col2 = st.columns([10, 1])
@@ -526,17 +566,7 @@ def render_final_review_page():
                     with col2:
                         st.button("✏️", key=f"edit_review_{key}", on_click=set_editing_section, args=(key,))
                     
-                    if st.session_state.editing_section == key:
-                        st.text_area(
-                            f"Edit {display_label}", 
-                            value=format_content_for_display(content), 
-                            height=300, 
-                            key=f"text_area_{key}" # Re-use key to link to save function
-                        )
-                        st.caption("You can use Markdown for formatting (e.g., **bold**, *italics*, - lists).")
-                        st.button("Save Changes", key=f"save_review_{key}", on_click=save_edit, args=(key,))
-                    else:
-                        st.markdown(format_content_for_display(content))
+                    st.markdown(format_content_for_display(content))
 
     # --- Section 3: Experiment Metrics Dashboard ---
     with st.container(border=True):
@@ -557,7 +587,7 @@ def render_final_review_page():
             """Callback to generate risks and next steps."""
             with st.spinner("Generating contextual risks..."):
                 risk_data = {
-                    "business_goal": prd['intro_data'].get('business_goal'),
+                    **prd['intro_data'],
                     "hypothesis": prd['hypothesis'].get('Statement')
                 }
                 generated_risks = generate_content(st.session_state.api_key, risk_data, "risks")
@@ -570,14 +600,16 @@ def render_final_review_page():
 
         for i, r in enumerate(st.session_state.prd_data.get("risks", [])):
             if st.session_state.editing_risk == i:
-                with st.form(key=f"edit_risk_form_{i}"):
-                    edited_risk_text = st.text_area("Edit Risk", value=r['risk'], height=100)
-                    edited_mitigation_text = st.text_area("Edit Mitigation", value=r['mitigation'], height=100)
-                    st.form_submit_button("Save Risk", on_click=save_risk_edit, args=(i, edited_risk_text, edited_mitigation_text))
-            else:
-                st.markdown(f"**Risk {i+1}:** {r['risk']}")
-                st.markdown(f"**Mitigation:** {r['mitigation']}")
-                st.button(f"✏️ Edit Risk {i+1}", key=f"edit_risk_{i}", on_click=set_editing_risk, args=(i,))
+                edit_risk_dialog(i)
+            
+            with st.container(border=True):
+                col1, col2 = st.columns([10, 1])
+                with col1:
+                    st.subheader(f"Risk {i+1}")
+                    st.markdown(f"**Description:** {r['risk']}")
+                    st.markdown(f"**Mitigation:** {r['mitigation']}")
+                with col2:
+                    st.button("✏️", key=f"edit_risk_{i}", on_click=set_editing_risk, args=(i,))
 
     # --- Section 5: Download Button ---
     st.subheader("Download PRD")
@@ -600,9 +632,6 @@ st.sidebar.title("Navigation")
 for s in STAGES:
     # Use partial to pass the stage name to the callback
     st.sidebar.button(s, key=f"nav_{s}", on_click=partial(set_stage, s))
-
-st.sidebar.button("⬅️ Back", key="back_btn", on_click=back_stage)
-st.sidebar.button("➡️ Next", key="next_btn", on_click=next_stage)
 
 # --- Main Rendering Logic ---
 # This part remains the same, as it correctly routes to the right page based on the stage.

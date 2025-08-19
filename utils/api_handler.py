@@ -1,79 +1,107 @@
-import groq
+import os
 import json
+import re
+import requests
 
-def generate_content(api_key, data, content_type):
-    """
-    Generates content using the Groq API based on the specified content type.
-
-    Args:
-        api_key (str): The API key for Groq.
-        data (dict or str): The input data for the prompt.
-        content_type (str): The type of content to generate (e.g., 'hypotheses', 'enrich_hypothesis', 'prd_sections').
-
-    Returns:
-        dict: The generated content as a dictionary or a dictionary with an error message.
-    """
-    client = groq.Groq(api_key=api_key)
-    model = "llama3-8b-8192"  # Using a suitable Groq model
-
-    # Prompts for different content types
-    prompts = {
-        "hypotheses": f"""
-        You are a product manager's co-pilot for A/B testing.
-        Based on the following business context, generate three distinct and well-defined hypotheses for an A/B test.
-        For each hypothesis, provide a:
-        - "Statement": A clear, concise hypothesis statement.
-        - "Rationale": The reasoning behind the hypothesis.
-        - "Behavioral Basis": A psychological or behavioral principle that supports the hypothesis.
-        - "Implementation Steps": A high-level, actionable plan to implement the change.
-        
-        Business Context:
-        {json.dumps(data)}
-        
-        Respond with a JSON object where the keys are "Hypothesis 1", "Hypothesis 2", and "Hypothesis 3".
-        """,
-        "enrich_hypothesis": f"""
-        You are a product manager's co-pilot. A user has provided a custom hypothesis for an A/B test.
-        Based on the following hypothesis statement, please provide a detailed:
-        - "Statement": The user's original statement.
-        - "Rationale": The reasoning behind the hypothesis.
-        - "Behavioral Basis": A psychological or behavioral principle that supports the hypothesis.
-        - "Implementation Steps": A high-level, actionable plan to implement the change.
-
-        Hypothesis Statement:
-        {data}
-
-        Respond with a JSON object with keys: "Statement", "Rationale", "Behavioral Basis", and "Implementation Steps".
-        """,
-        "prd_sections": f"""
-        You are a product manager's co-pilot. A user has selected a hypothesis for their A/B test.
-        Based on the following hypothesis, draft the following sections for a Product Requirements Document (PRD):
-        - "Problem Statement": Briefly describe the problem this experiment addresses.
-        - "Risks & Assumptions": Outline potential risks and key assumptions.
-        - "Secondary & Hygiene Metrics": List other metrics to monitor.
-        - "Next Steps": Detail what happens after the experiment concludes.
-
-        Selected Hypothesis:
-        {json.dumps(data)}
-        
-        Respond with a JSON object with keys: "Problem Statement", "Risks & Assumptions", "Secondary & Hygiene Metrics", and "Next Steps".
-        """
-    }
-
+# --- Safe JSON Parse Helper ---
+def safe_json_parse(raw_text):
     try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompts[content_type],
-                }
-            ],
-            model=model,
-            response_format={"type": "json_object"},
-            temperature=0.5
-        )
-        response_content = chat_completion.choices[0].message.content
-        return json.loads(response_content)
-    except Exception as e:
-        return {"error": f"An error occurred with the LLM call: {e}"}
+        return json.loads(raw_text)
+    except json.JSONDecodeError:
+        # Attempt quick repair: strip junk before/after JSON
+        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except Exception:
+                pass
+        return {"error": "Failed to parse LLM response as JSON", "raw": raw_text}
 
+
+# --- Core Function ---
+def generate_content(api_key, data, mode="hypotheses"):
+    """
+    Calls Groq API to generate hypotheses, PRD sections, or enrich hypotheses.
+    - api_key: Groq API key (user-provided)
+    - data: dict or string, depending on mode
+    - mode: "hypotheses", "prd_sections", "enrich_hypothesis"
+    """
+    try:
+        url = "https://api.groq.com/openai/v1/chat/completions"
+
+        # --- Build Prompt ---
+        if mode == "hypotheses":
+            user_prompt = f"""
+            Based on the following A/B test inputs, generate 2 strong hypotheses.
+
+            Inputs:
+            - Business Goal: {data.get("business_goal")}
+            - Key Metric: {data.get("key_metric")} ({data.get("metric_unit")})
+            - Current Value: {data.get("current_value")}
+            - Target Value: {data.get("target_value")}
+            - Product Area: {data.get("product_area")}
+            - Product Type: {data.get("product_type")}
+            - DAU: {data.get("dau")}
+
+            Each hypothesis should be returned as JSON with fields:
+            {{
+              "Statement": "...",
+              "Rationale": "...",
+              "Behavioral Basis": "...",
+              "Implementation Steps": "..."
+            }}
+            Return an object with keys Hypothesis 1, Hypothesis 2.
+            """
+        elif mode == "prd_sections":
+            user_prompt = f"""
+            Draft PRD sections based on the following hypothesis:
+
+            {json.dumps(data, indent=2)}
+
+            Return JSON with sections as keys (Problem, Goal, Success Metrics, Implementation Plan).
+            """
+        elif mode == "enrich_hypothesis":
+            user_prompt = f"""
+            Enrich the following custom hypothesis:
+
+            {data}
+
+            Return JSON with:
+            {{
+              "Statement": "...",
+              "Rationale": "...",
+              "Behavioral Basis": "...",
+              "Implementation Steps": "..."
+            }}
+            """
+        else:
+            return {"error": f"Invalid mode '{mode}'"}
+
+        # --- Make API Call ---
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+        payload = {
+            "model": "llama-3.3-70b-versatile",   # ✅ updated model
+            "messages": [
+                {"role": "system", "content": "You are an expert product manager helping draft PRDs."},
+                {"role": "user", "content": user_prompt}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 1200,
+            "response_format": {"type": "json_object"}   # ✅ force JSON
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            return {"error": f"API Error {response.status_code}: {response.text}"}
+
+        raw_text = response.json()["choices"][0]["message"]["content"]
+
+        # --- Safe Parse ---
+        return safe_json_parse(raw_text)
+
+    except Exception as e:
+        return {"error": str(e)}

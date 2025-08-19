@@ -1,13 +1,20 @@
 import streamlit as st
 import pandas as pd
+import re
 # Import functions from your utility files.
 from utils.api_handler import generate_content
-# from utils.calculations import calculate_sample_size, calculate_duration
-# from utils.pdf_generator import create_pdf
+from utils.calculations import calculate_sample_size, calculate_duration
+from utils.pdf_generator import create_pdf
+
+try:
+    from utils.calculations import calculate_sample_size, calculate_duration
+    CALCULATIONS_AVAILABLE = True
+except ImportError as e:
+    CALCULATIONS_AVAILABLE = False
+    CALC_ERROR_MSG = str(e)
+
 
 # --- Custom CSS for a Polished UI ---
-# This CSS makes the app look sleek and modern with a dark theme,
-# custom fonts, and styled components.
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
@@ -114,38 +121,30 @@ if "prd_data" not in st.session_state:
         "prd_sections": {},
         "calculations": {}
     }
-# State to track which section is being edited
 if "editing_section" not in st.session_state:
     st.session_state.editing_section = None
 
-# --- Helper Functions for Navigation ---
+
+# --- Helper Functions ---
 def next_stage():
-    """Moves the application to the next stage."""
     current_index = STAGES.index(st.session_state.stage)
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]
 
 def back_stage():
-    """Moves the application to the previous stage."""
     current_index = STAGES.index(st.session_state.stage)
     if current_index > 0:
         st.session_state.stage = STAGES[current_index - 1]
 
 def set_editing_section(section_title):
-    """Sets the current section for editing."""
     st.session_state.editing_section = section_title
 
 def save_edit(section_title, edited_text):
-    """Saves the edited text for a specific section."""
     st.session_state.prd_data["prd_sections"][section_title] = edited_text
-    st.session_state.editing_section = None # Hide the text area
+    st.session_state.editing_section = None
     st.success(f"Changes to '{section_title}' saved!")
 
 def format_content_for_display(content):
-    """
-    Formats content for display based on its type.
-    Handles lists for bullet points and dictionaries for structured content.
-    """
     if isinstance(content, list):
         return "\n".join([f"- {item}" for item in content])
     elif isinstance(content, dict):
@@ -162,13 +161,13 @@ def format_content_for_display(content):
         return content
 
 
-# --- UI Rendering Functions for Each Stage ---
+# --- UI Rendering Functions ---
+import re
+
 def render_intro_page():
-    """Renders the initial form for gathering business context."""
     st.header("Step 1: The Basics 📝")
     st.write("Please provide some high-level details about your A/B test.")
     
-    # New section to input API Key
     st.session_state.api_key = st.text_input("Enter your Groq API Key", type="password")
 
     with st.form("intro_form"):
@@ -181,12 +180,32 @@ def render_intro_page():
             )
             st.session_state.prd_data["intro_data"]["key_metric"] = st.text_input(
                 "Key Metric",
-                placeholder="e.g., Login Rate"
+                placeholder="e.g., Login Rate, ARPDAU"
             )
+
+            # --- Metric Unit with dropdown + custom ---
+            metric_unit_choice = st.selectbox(
+                "Metric Unit",
+                options=["%", "INR", "USD", "count", "Other"],
+                index=0
+            )
+
+            if metric_unit_choice == "Other":
+                custom_metric_unit = st.text_input("Enter custom metric unit (letters, numbers, spaces only)")
+                if custom_metric_unit:
+                    if re.match(r"^[A-Za-z0-9 ]+$", custom_metric_unit):
+                        st.session_state.prd_data["intro_data"]["metric_unit"] = custom_metric_unit
+                    else:
+                        st.warning("⚠️ Metric unit can only contain letters, numbers, and spaces. No special characters allowed.")
+                        st.session_state.prd_data["intro_data"]["metric_unit"] = None
+                else:
+                    st.session_state.prd_data["intro_data"]["metric_unit"] = None
+            else:
+                st.session_state.prd_data["intro_data"]["metric_unit"] = metric_unit_choice
+
             st.session_state.prd_data["intro_data"]["current_value"] = st.number_input(
-                "Current Metric Value (%)",
+                "Current Metric Value",
                 min_value=0.0,
-                max_value=100.0,
                 value=50.0,
                 help="The current value of your key metric."
             )
@@ -196,9 +215,8 @@ def render_intro_page():
                 placeholder="e.g., Mobile App Onboarding"
             )
             st.session_state.prd_data["intro_data"]["target_value"] = st.number_input(
-                "Target Metric Value (%)",
+                "Target Metric Value",
                 min_value=0.0,
-                max_value=100.0,
                 value=55.0,
                 help="The value you are aiming for."
             )
@@ -208,6 +226,11 @@ def render_intro_page():
                 value=10000,
                 help="The total number of unique users daily."
             )
+            st.session_state.prd_data["intro_data"]["product_type"] = st.selectbox(
+                "Product Type",
+                options=["SaaS Product", "Mobile App", "Web Platform", "Other"],
+                index=1
+            )
 
         submit_button = st.form_submit_button("Generate Hypotheses")
         if submit_button:
@@ -215,7 +238,11 @@ def render_intro_page():
                 st.error("Please provide your Groq API Key to proceed.")
             elif all(v for v in st.session_state.prd_data["intro_data"].values()):
                 with st.spinner("Generating hypotheses..."):
-                    hypotheses = generate_content(st.session_state.api_key, st.session_state.prd_data["intro_data"], "hypotheses")
+                    hypotheses = generate_content(
+                        st.session_state.api_key,
+                        st.session_state.prd_data["intro_data"],
+                        "hypotheses"
+                    )
                     if "error" in hypotheses:
                         st.error(hypotheses["error"])
                     else:
@@ -224,68 +251,91 @@ def render_intro_page():
             else:
                 st.error("Please fill out all the fields to continue.")
 
+
+
 def render_hypothesis_page():
-    """Renders the generated hypotheses and allows the user to select one."""
     st.header("Step 2: Hypotheses 🧠")
     st.write("We've generated a few hypotheses for you. Select your favorite or write your own!")
     
-    cols = st.columns(len(st.session_state.hypotheses))
-    selected_hypothesis = None
-    
-    for i, (name, data) in enumerate(st.session_state.hypotheses.items()):
-        with cols[i]:
-            with st.container(border=True):
-                st.subheader("Hypothesis Statement")
-                st.markdown(data["Statement"])
-                st.subheader("Rationale")
-                st.markdown(data["Rationale"])
-                st.subheader("Behavioral Basis")
-                st.markdown(data["Behavioral Basis"])
-                st.subheader("Implementation Steps")
-                st.markdown(data["Implementation Steps"])
-                if st.button(f"Select {name}", key=f"select_{i}"):
-                    st.session_state.prd_data["hypothesis"] = data
-                    st.success(f"You have selected: {data['Statement']}")
-                    st.session_state.hypotheses_selected = True
+    # --- Show generated hypotheses (from intro stage) ---
+    if isinstance(st.session_state.hypotheses, dict):
+        cols = st.columns(len(st.session_state.hypotheses))
+        for i, (name, data) in enumerate(st.session_state.hypotheses.items()):
+            with cols[i]:
+                with st.container(border=True):
+                    st.subheader("Hypothesis Statement")
+                    st.markdown(data.get("Statement", "N/A"))
+                    st.subheader("Rationale")
+                    st.markdown(data.get("Rationale", "N/A"))
+                    st.subheader("Behavioral Basis")
+                    st.markdown(data.get("Behavioral Basis", "N/A"))
+                    st.subheader("Implementation Steps")
+                    st.markdown(data.get("Implementation Steps", "N/A"))
+                    if st.button(f"Select {name}", key=f"select_{i}"):
+                        st.session_state.prd_data["hypothesis"] = data
+                        st.success(f"You have selected: {data['Statement']}")
+                        st.session_state.hypotheses_selected = True
 
     st.write("---")
     st.subheader("Or, Write Your Own Hypothesis")
     custom_hypothesis = st.text_area("Your Custom Hypothesis", placeholder="e.g., I hypothesize that...")
-    if st.button("Generate from Custom"):
+
+    # --- Generate enriched hypothesis from custom ---
+    if st.button("Generate from Custom", key="gen_custom_btn"):
         if not st.session_state.api_key:
             st.error("Please provide your Groq API Key to proceed.")
         elif custom_hypothesis:
             with st.spinner("Generating from custom hypothesis..."):
-                enriched_data = generate_content(st.session_state.api_key, custom_hypothesis, "enrich_hypothesis")
+                # FIX: Pass the raw string for enrichment
+                enriched_data = generate_content(
+                    st.session_state.api_key,
+                    custom_hypothesis,  # raw string, not dict
+                    "enrich_hypothesis"
+                )
                 if "error" in enriched_data:
                     st.error(enriched_data["error"])
                 else:
-                    st.session_state.prd_data["hypothesis"] = enriched_data
-                    st.session_state.hypotheses_selected = True
-                    st.success("Your custom hypothesis has been generated!")
-        else:
-            st.error("Please write a hypothesis to generate from.")
-    
+                    st.session_state.custom_hypothesis_generated = enriched_data
+                    st.success("Your custom hypothesis has been generated! Please review below.")
+
+    # --- Show enriched hypothesis (before locking) ---
+    if "custom_hypothesis_generated" in st.session_state:
+        st.subheader("Generated Hypothesis Details")
+        enriched = st.session_state.custom_hypothesis_generated
+        st.markdown(f"**Statement:** {enriched.get('Statement', 'N/A')}")
+        st.markdown(f"**Rationale:** {enriched.get('Rationale', 'N/A')}")
+        st.markdown(f"**Behavioral Basis:** {enriched.get('Behavioral Basis', 'N/A')}")
+        st.markdown(f"**Implementation Steps:** {enriched.get('Implementation Steps', 'N/A')}")
+
+        if st.button("Lock This Hypothesis", key="lock_custom_btn"):
+            st.session_state.prd_data["hypothesis"] = enriched
+            st.session_state.hypotheses_selected = True
+            st.success("Custom hypothesis locked!")
+
     st.write("---")
-    if st.button("Continue to PRD Draft"):
+    if st.button("Continue to PRD Draft", key="continue_prd_btn"):
         if "hypotheses_selected" in st.session_state and st.session_state.hypotheses_selected:
             next_stage()
         else:
             st.error("Please select or generate a hypothesis before continuing.")
 
+
 def render_prd_page():
-    """Renders the editable PRD sections."""
     st.header("Step 3: PRD Draft ✍️")
     st.write("We've drafted the core sections of your PRD. Please edit and finalize them.")
     
     if not st.session_state.prd_data.get("prd_sections"):
         with st.spinner("Drafting PRD sections..."):
-            prd_sections = generate_content(st.session_state.api_key, st.session_state.prd_data["hypothesis"], "prd_sections")
+            prd_sections = generate_content(
+                st.session_state.api_key,
+                st.session_state.prd_data["hypothesis"],
+                "prd_sections"
+            )
             if "error" in prd_sections:
                 st.error(prd_sections["error"])
             else:
                 st.session_state.prd_data["prd_sections"] = prd_sections
-                st.session_state.editing_section = None # Initialize editing state
+                st.session_state.editing_section = None
 
     for section_title, content in st.session_state.prd_data["prd_sections"].items():
         with st.container(border=True):
@@ -294,16 +344,12 @@ def render_prd_page():
                 if st.session_state.editing_section != section_title:
                     if st.button("✏️", key=f"edit_{section_title}"):
                         set_editing_section(section_title)
-                        st.rerun()
             with col2:
                 st.subheader(f"**{section_title}**")
             
-            # Display formatted content if not in edit mode
             if st.session_state.editing_section != section_title:
                 st.markdown(format_content_for_display(content))
             else:
-                # Show editable text area if in edit mode
-                # The text area value is also formatted for a clean editing experience
                 edited_text = st.text_area(
                     "Edit this section",
                     value=format_content_for_display(content),
@@ -312,14 +358,16 @@ def render_prd_page():
                 )
                 if st.button("Save Changes", key=f"save_{section_title}"):
                     save_edit(section_title, edited_text)
-                    st.rerun()
 
     st.write("---")
-    if st.button("Save & Continue to Calculations"):
+    if st.button("Save & Continue to Calculations", key="to_calcs"):
         next_stage()
 
+
 def render_calculations_page():
-    """Renders the statistical calculator."""
+    if not CALCULATIONS_AVAILABLE:
+        st.error("⚠️ Experiment calculations are unavailable because a required dependency (`scipy`) is missing.")
+        return
     st.header("Step 4: Experiment Calculations 📊")
     st.write("Verify the inputs below to calculate your required sample size and duration.")
 
@@ -327,124 +375,167 @@ def render_calculations_page():
     dau = intro_data.get("dau", 10000)
     current_value = intro_data.get("current_value", 50.0)
     target_value = intro_data.get("target_value", 55.0)
+    unit = intro_data.get("metric_unit", "")
 
-    # Display key metrics from Step 1
+    # Sidebar controls
+    st.sidebar.subheader("Experiment Parameters")
+    st.session_state.prd_data["calculations"]["confidence"] = st.sidebar.slider(
+        "Confidence Level (%)", min_value=50, max_value=99, value=95, step=1
+    ) / 100
+    st.session_state.prd_data["calculations"]["power"] = st.sidebar.slider(
+        "Power Level (%)", min_value=50, max_value=99, value=80, step=1
+    ) / 100
+    st.session_state.prd_data["calculations"]["coverage"] = st.sidebar.slider(
+        "Coverage (%)", min_value=5, max_value=100, value=50, step=5
+    )
+    st.session_state.prd_data["calculations"]["min_detectable_effect"] = st.sidebar.number_input(
+        "Minimum Detectable Effect (%)", min_value=0.0, value=5.0
+    )
+
     st.subheader("Key Metrics")
-    st.markdown(f"**Key Metric:** {intro_data.get('key_metric', 'N/A')}")
-    st.markdown(f"**Current Value:** {intro_data.get('current_value', 'N/A')}%")
-    st.markdown(f"**Daily Active Users (DAU):** {intro_data.get('dau', 'N/A')}")
-    
-    st.write("---")
-    st.subheader("Experiment Parameters")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.session_state.prd_data["calculations"]["confidence"] = st.slider(
-            "Confidence Level",
-            min_value=0.50,
-            max_value=0.99,
-            value=0.95,
-            step=0.01,
-            help="The probability of avoiding a false positive."
-        )
-        st.session_state.prd_data["calculations"]["power"] = st.slider(
-            "Power Level",
-            min_value=0.50,
-            max_value=0.99,
-            value=0.80,
-            step=0.01,
-            help="The probability of avoiding a false negative."
-        )
-        st.session_state.prd_data["calculations"]["coverage"] = st.slider(
-            "Coverage (%)",
-            min_value=5,
-            max_value=100,
-            value=50,
-            step=5,
-            help="The percentage of DAU included in the experiment."
-        )
+    st.markdown(f"**Key Metric:** {intro_data.get('key_metric', 'N/A')} ({unit})")
+    st.markdown(f"**Current Value:** {intro_data.get('current_value', 'N/A')} {unit}")
+    st.markdown(f"**Target Value:** {intro_data.get('target_value', 'N/A')} {unit}")
+    st.markdown(f"**Daily Active Users (DAU):** {dau}")
 
-    with col2:
-        st.session_state.prd_data["calculations"]["min_detectable_effect"] = st.number_input(
-            "Minimum Detectable Effect (%)",
-            min_value=0.0,
-            value=5.0,
-            help="The smallest effect size you want to detect."
-        )
-        # Display Current Metric Value as non-editable text
-        st.number_input("Current Value of Metric (%)", value=current_value, disabled=True)
-        st.number_input("Number of Variants", value=2, disabled=True)
-        
-
-    if st.button("Calculate"):
-        # This will be replaced by the actual function call later
-        sample_size_per_variant = 1922
-        duration_in_days = 1
-
-        st.session_state.prd_data["calculations"]["sample_size"] = sample_size_per_variant
-        st.session_state.prd_data["calculations"]["duration"] = duration_in_days
-        st.success("Calculations complete!")
+    if st.button("Calculate", key="calc_btn"):
+        try:
+            sample_size_per_variant = calculate_sample_size(
+                current_value=current_value,
+                min_detectable_effect=st.session_state.prd_data["calculations"]["min_detectable_effect"],
+                confidence=st.session_state.prd_data["calculations"]["confidence"],
+                power=st.session_state.prd_data["calculations"]["power"]
+            )
+            duration_in_days = calculate_duration(
+                sample_size=sample_size_per_variant,
+                daily_active_users=dau,
+                coverage=st.session_state.prd_data["calculations"]["coverage"]
+            )
+            st.session_state.prd_data["calculations"]["sample_size"] = sample_size_per_variant
+            st.session_state.prd_data["calculations"]["duration"] = duration_in_days
+            st.success("Calculations complete!")
+        except Exception as e:
+            st.error(f"Error in calculations: {e}")
 
     if "sample_size" in st.session_state.prd_data["calculations"]:
         st.subheader("Results")
-        st.info(
-            f"**Required Sample Size per Variant:** {st.session_state.prd_data['calculations']['sample_size']}"
-        )
-        st.info(
-            f"**Estimated Experiment Duration:** {st.session_state.prd_data['calculations']['duration']} days"
-        )
-        if st.button("Continue to Final Review"):
+        st.info(f"**Required Sample Size per Variant:** {st.session_state.prd_data['calculations']['sample_size']}")
+        st.info(f"**Estimated Experiment Duration:** {st.session_state.prd_data['calculations']['duration']} days")
+        if st.button("Continue to Final Review", key="to_review"):
             next_stage()
 
+
+
 def render_final_review_page():
-    """Renders the complete PRD for review and export."""
     st.header("Step 5: Final Review & Export 🎉")
-    st.write("Your complete PRD is ready. Review it below and download the PDF.")
+    st.write("Your complete PRD is ready. Review, polish, and export.")
 
     prd = st.session_state.prd_data
-    
-    st.subheader("1.0 Introduction")
-    st.markdown(f"**Business Goal:** {prd['intro_data'].get('business_goal', 'N/A')}")
-    st.markdown(f"**Key Metric:** {prd['intro_data'].get('key_metric', 'N/A')}")
-    st.markdown(f"**Current Value:** {prd['intro_data'].get('current_value', 'N/A')}%")
-    st.markdown(f"**Target Value:** {prd['intro_data'].get('target_value', 'N/A')}%")
-    st.markdown(f"**Daily Active Users (DAU):** {prd['intro_data'].get('dau', 'N/A')}")
 
-    st.subheader("2.0 Hypothesis")
-    st.markdown(f"**Hypothesis Statement:** {prd['hypothesis'].get('Statement', 'N/A')}")
-    st.markdown(f"**Rationale:** {prd['hypothesis'].get('Rationale', 'N/A')}")
-    st.markdown(f"**Behavioral Basis:** {prd['hypothesis'].get('Behavioral Basis', 'N/A')}")
-    st.markdown(f"**Implementation Steps:** {prd['hypothesis'].get('Implementation Steps', 'N/A')}")
+    # --- Executive Summary ---
+    with st.container():
+        st.markdown("""
+        <div style="
+            background-color:#161b22;
+            padding:20px;
+            border-radius:12px;
+            border:1px solid #30363d;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            margin-bottom:15px;
+            ">
+            <h3>🚀 Executive Summary</h3>
+        </div>
+        """, unsafe_allow_html=True)
 
+        st.markdown(f"**Business Goal:** {prd['intro_data'].get('business_goal', 'N/A')}")
+        st.markdown(f"**Hypothesis:** {prd['hypothesis'].get('Statement', 'N/A')}")
+        st.markdown(
+            f"**Success Criteria:** Target {prd['intro_data'].get('key_metric', 'N/A')} → "
+            f"{prd['intro_data'].get('target_value', 'N/A')} {prd['intro_data'].get('metric_unit', '')}"
+        )
+
+    # --- PRD Sections with Proper Expanders ---
     st.subheader("3.0 PRD Sections")
-    for section_title, content in prd['prd_sections'].items():
-        st.subheader(f"**{section_title}**")
-        st.markdown(format_content_for_display(content))
+
+    prd_sections = prd.get('prd_sections', {})
+    if not prd_sections:
+        st.info("No PRD sections generated yet.")
+    else:
+        for section_title, content in prd_sections.items():
+            # Guarantee clean, non-empty section labels
+            section_label = str(section_title).strip() or "Untitled Section"
+            
+            with st.expander(f"📑 {section_label}", expanded=False):
+                if st.session_state.editing_section == section_label:
+                    # Editable mode
+                    edited_text = st.text_area(
+                        "Edit this section",
+                        value=format_content_for_display(content),
+                        height=200,
+                        key=f"text_area_review_{section_label}"
+                    )
+                    if st.button("Save Changes", key=f"save_review_{section_label}"):
+                        save_edit(section_label, edited_text)
+                else:
+                    # Normal view mode
+                    st.markdown(format_content_for_display(content))
+                    if st.button(f"✏️ Edit {section_label}", key=f"edit_review_{section_label}"):
+                        set_editing_section(section_label)
+
+    # --- Experiment Metrics Dashboard ---
+    st.subheader("4.0 Experiment Metrics Dashboard 📊")
+    metrics_cols = st.columns(4)
+    metrics_cols[0].metric("Confidence", f"{int(prd['calculations'].get('confidence', 0)*100)}%")
+    metrics_cols[1].metric("Power", f"{int(prd['calculations'].get('power', 0)*100)}%")
+    metrics_cols[2].metric("Sample Size", f"{prd['calculations'].get('sample_size', 'N/A')}", "↑ per variant")
+    metrics_cols[3].metric("Duration", f"{prd['calculations'].get('duration', 'N/A')} days")
+
+    # --- Risks & Next Steps ---
+    st.subheader("5.0 Risks & Next Steps ⚠️")
+    risks = [
+        {"risk": "Low DAU may extend test duration", "mitigation": "Reduce variants or increase coverage"},
+        {"risk": "Seasonality impact may bias results", "mitigation": "Run experiment over multiple weeks"},
+    ]
+
+    for i, r in enumerate(risks, start=1):
+        st.markdown(f"**Risk {i}:** {r['risk']}")
+        st.markdown(f"**Mitigation:** {r['mitigation']}")
+        if st.button(f"✏️ Edit Risk {i}", key=f"edit_risk_{i}"):
+            st.warning("Risk editing not yet implemented.")  # placeholder for now
+
+    # --- Download as PDF ---
+    if st.button("📥 Download PRD as PDF"):
+        try:
+            pdf_bytes = create_pdf(prd)
+            st.download_button(
+                label="Download PRD",
+                data=pdf_bytes,
+                file_name="AB_Testing_PRD.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error(f"Error generating PDF: {e}")
 
 
-    st.subheader("4.0 Experiment Plan")
-    st.markdown(f"**Confidence Level:** {prd['calculations'].get('confidence', 'N/A')}")
-    st.markdown(f"**Power Level:** {prd['calculations'].get('power', 'N/A')}")
-    st.markdown(f"**Sample Size (per variant):** {prd['calculations'].get('sample_size', 'N/A')}")
-    st.markdown(f"**Duration:** {prd['calculations'].get('duration', 'N/A')} days")
+# --- Sidebar Navigation ---
+st.sidebar.title("Navigation")
+for s in STAGES:
+    if st.sidebar.button(s, key=f"nav_{s}"):
+        st.session_state.stage = s
 
-    st.success("Your PRD is complete! The download functionality will be implemented soon.")
+if st.sidebar.button("⬅️ Back", key="back_btn"):
+    back_stage()
+if st.sidebar.button("➡️ Next", key="next_btn"):
+    next_stage()
 
-# --- Main App Logic ---
-if __name__ == "__main__":
-    st.title("")  # Using custom CSS for the main header
-    st.markdown('<div class="main-header">A/B Testing PRD Generator</div>', unsafe_allow_html=True)
-    st.sidebar.title("Navigation")
-    
-    if st.sidebar.button("Back") and st.session_state.stage != "Intro":
-        back_stage()
-    
-    if st.session_state.stage == "Intro":
-        render_intro_page()
-    elif st.session_state.stage == "Hypothesis":
-        render_hypothesis_page()
-    elif st.session_state.stage == "PRD":
-        render_prd_page()
-    elif st.session_state.stage == "Calculations":
-        render_calculations_page()
-    elif st.session_state.stage == "Review":
-        render_final_review_page()
+# --- Main Rendering ---
+if st.session_state.stage == "Intro":
+    render_intro_page()
+elif st.session_state.stage == "Hypothesis":
+    render_hypothesis_page()
+elif st.session_state.stage == "PRD":
+    render_prd_page()
+elif st.session_state.stage == "Calculations":
+    render_calculations_page()
+elif st.session_state.stage == "Review":
+    render_final_review_page()

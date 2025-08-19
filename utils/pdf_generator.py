@@ -1,86 +1,90 @@
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from io import BytesIO
 
-def create_pdf(prd_data: dict) -> bytes:
-    """
-    Generates a PDF from the A/B testing PRD data.
-
-    This function uses the reportlab library to create a professional-looking PDF
-    document from the structured PRD data. It formats the content with titles,
-    sections, and body text.
-
-    Args:
-        prd_data (dict): A dictionary containing all the PRD sections and data.
-
-    Returns:
-        bytes: The bytes of the generated PDF file.
-    """
-    # Create a buffer to store the PDF
-    from io import BytesIO
+def create_pdf(prd):
     buffer = BytesIO()
-
-    # Create a document object
-    doc = SimpleDocTemplate(buffer, pagesize=letter)
-    
-    # Create a list to hold the flowable content for the PDF
-    story = []
-    
-    # Get standard paragraph styles
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
     styles = getSampleStyleSheet()
-    
-    # Define custom styles for headers
-    styles.add(ParagraphStyle(name='Heading1', fontSize=18, spaceAfter=12, fontName='Helvetica-Bold'))
-    styles.add(ParagraphStyle(name='Heading2', fontSize=14, spaceAfter=10, fontName='Helvetica-Bold'))
-    styles.add(ParagraphStyle(name='BodyText', fontSize=10, spaceAfter=6))
 
-    # --- Add PRD Content to the PDF ---
-    
-    # Title
-    story.append(Paragraph("A/B Testing Product Requirements Document", styles['Heading1']))
-    story.append(Spacer(1, 0.2 * inch))
+    # Custom styles
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=14
+    )
+    section_style = ParagraphStyle(
+        'SectionStyle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=10
+    )
+    normal_style = styles['Normal']
 
-    # 1.0 Introduction
-    story.append(Paragraph("1.0 Introduction", styles['Heading1']))
-    story.append(Paragraph(f"**Business Goal:** {prd_data['intro_data'].get('business_goal', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Key Metric:** {prd_data['intro_data'].get('key_metric', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Current Value:** {prd_data['intro_data'].get('current_value', 'N/A')}%", styles['BodyText']))
-    story.append(Paragraph(f"**Target Value:** {prd_data['intro_data'].get('target_value', 'N/A')}%", styles['BodyText']))
-    story.append(Paragraph(f"**Daily Active Users (DAU):** {prd_data['intro_data'].get('dau', 'N/A')}", styles['BodyText']))
-    story.append(Spacer(1, 0.2 * inch))
+    # --- Intro ---
+    intro = prd.get("intro_data", {})
+    metric_unit = intro.get("metric_unit", "")
+    if metric_unit:  
+        metric_unit = f" {metric_unit}"  # add space before unit if exists
 
-    # 2.0 Hypothesis
-    story.append(Paragraph("2.0 Hypothesis", styles['Heading1']))
-    hypothesis = prd_data.get('hypothesis', {})
-    story.append(Paragraph(f"**Hypothesis Statement:** {hypothesis.get('Statement', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Rationale:** {hypothesis.get('Rationale', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Behavioral Basis:** {hypothesis.get('Behavioral Basis', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Implementation Steps:** {hypothesis.get('Implementation Steps', 'N/A')}", styles['BodyText']))
-    story.append(Spacer(1, 0.2 * inch))
+    elements.append(Paragraph("A/B Testing PRD", title_style))
+    elements.append(Spacer(1, 12))
 
-    # 3.0 PRD Sections
-    story.append(Paragraph("3.0 PRD Sections", styles['Heading1']))
-    prd_sections = prd_data.get('prd_sections', {})
+    elements.append(Paragraph("1.0 Introduction", section_style))
+    elements.append(Paragraph(f"Business Goal: {intro.get('business_goal', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Product Area: {intro.get('product_area', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Product Type: {intro.get('product_type', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Key Metric: {intro.get('key_metric', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Current Value: {intro.get('current_value', 'N/A')}{metric_unit}", normal_style))
+    elements.append(Paragraph(f"Target Value: {intro.get('target_value', 'N/A')}{metric_unit}", normal_style))
+    elements.append(Paragraph(f"Daily Active Users (DAU): {intro.get('dau', 'N/A')}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # --- Hypothesis ---
+    hyp = prd.get("hypothesis", {})
+    elements.append(Paragraph("2.0 Hypothesis", section_style))
+    elements.append(Paragraph(f"Statement: {hyp.get('Statement', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Rationale: {hyp.get('Rationale', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Behavioral Basis: {hyp.get('Behavioral Basis', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Implementation Steps: {hyp.get('Implementation Steps', 'N/A')}", normal_style))
+    elements.append(Spacer(1, 12))
+
+    # --- PRD Sections ---
+    prd_sections = prd.get("prd_sections", {})
+    elements.append(Paragraph("3.0 PRD Sections", section_style))
     for section_title, content in prd_sections.items():
-        story.append(Paragraph(f"**{section_title}**", styles['Heading2']))
-        story.append(Paragraph(content, styles['BodyText']))
-    story.append(Spacer(1, 0.2 * inch))
+        elements.append(Paragraph(section_title, section_style))
+        if isinstance(content, str):
+            elements.append(Paragraph(content, normal_style))
+        elif isinstance(content, list):
+            for item in content:
+                elements.append(Paragraph(f"- {item}", normal_style))
+        elif isinstance(content, dict):
+            for k, v in content.items():
+                elements.append(Paragraph(f"{k}: {v}", normal_style))
+        elements.append(Spacer(1, 8))
 
-    # 4.0 Experiment Plan
-    story.append(Paragraph("4.0 Experiment Plan", styles['Heading1']))
-    calculations = prd_data.get('calculations', {})
-    story.append(Paragraph(f"**Confidence Level:** {calculations.get('confidence', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Power Level:** {calculations.get('power', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Sample Size (per variant):** {calculations.get('sample_size', 'N/A')}", styles['BodyText']))
-    story.append(Paragraph(f"**Duration:** {calculations.get('duration', 'N/A')} days", styles['BodyText']))
-    story.append(Spacer(1, 0.2 * inch))
+    # --- Experiment Plan ---
+    calc = prd.get("calculations", {})
+    elements.append(Paragraph("4.0 Experiment Plan", section_style))
+    confidence = calc.get("confidence", "N/A")
+    power = calc.get("power", "N/A")
 
-    # Build the PDF
-    doc.build(story)
+    # Convert floats (0.95 → 95%) 
+    if isinstance(confidence, float):
+        confidence = f"{round(confidence*100)}%"
+    if isinstance(power, float):
+        power = f"{round(power*100)}%"
 
-    # Move the buffer's cursor to the beginning
-    buffer.seek(0)
-    
-    # Return the byte stream
-    return buffer.getvalue()
+    elements.append(Paragraph(f"Confidence Level: {confidence}", normal_style))
+    elements.append(Paragraph(f"Power Level: {power}", normal_style))
+    elements.append(Paragraph(f"Sample Size (per variant): {calc.get('sample_size', 'N/A')}", normal_style))
+    elements.append(Paragraph(f"Duration: {calc.get('duration', 'N/A')} days", normal_style))
+
+    doc.build(elements)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes

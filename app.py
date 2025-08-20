@@ -283,14 +283,13 @@ def render_intro_page():
     st.header("Step 1: The Basics 📝")
     st.write("Please provide some high-level details about your A/B test.")
     
-    st.session_state.api_key = st.text_input("Enter your Groq API Key", type="password", key="api_key_input")
+    # Check for the API key in Streamlit secrets
+    if "GROQ_API_KEY" not in st.secrets:
+        st.error("Groq API key not found. Please add it to your Streamlit secrets to run this app.")
+        st.stop()
 
     def process_intro_form():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
-        if not st.session_state.api_key:
-            st.error("Please provide your Groq API Key to proceed.")
-            return
-
         # Log data to session state from form fields
         st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal
         st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric
@@ -314,7 +313,7 @@ def render_intro_page():
         if all(st.session_state.prd_data["intro_data"].get(field) is not None and st.session_state.prd_data["intro_data"].get(field) != "" for field in required_fields):
             with st.spinner("Generating hypotheses..."):
                 hypotheses = generate_content(
-                    st.session_state.api_key,
+                    st.secrets["GROQ_API_KEY"],
                     st.session_state.prd_data["intro_data"],
                     "hypotheses"
                 )
@@ -368,26 +367,25 @@ def render_hypothesis_page():
     def generate_from_custom():
         """Callback to generate an enriched hypothesis from custom user input."""
         custom_hypothesis = st.session_state.get("custom_hypothesis_input", "")
-        if not st.session_state.api_key:
-            st.error("Please provide your Groq API Key to proceed.")
-        elif custom_hypothesis:
-            with st.spinner("Generating from custom hypothesis..."):
-                context = {
-                    "custom_hypothesis": custom_hypothesis,
-                    **st.session_state.prd_data["intro_data"]
-                }
-                enriched_data = generate_content(
-                    st.session_state.api_key,
-                    context,
-                    "enrich_hypothesis"
-                )
-                if "error" in enriched_data:
-                    st.error(enriched_data["error"])
-                else:
-                    st.session_state.custom_hypothesis_generated = enriched_data
-                    st.success("Your custom hypothesis has been generated! Please review below.")
-        else:
+        if not custom_hypothesis:
             st.error("Please write a custom hypothesis first.")
+            return
+
+        with st.spinner("Generating from custom hypothesis..."):
+            context = {
+                "custom_hypothesis": custom_hypothesis,
+                **st.session_state.prd_data["intro_data"]
+            }
+            enriched_data = generate_content(
+                st.secrets["GROQ_API_KEY"],
+                context,
+                "enrich_hypothesis"
+            )
+            if "error" in enriched_data:
+                st.error(enriched_data["error"])
+            else:
+                st.session_state.custom_hypothesis_generated = enriched_data
+                st.success("Your custom hypothesis has been generated! Please review below.")
 
     def lock_custom_hypothesis():
         """Callback to lock in the generated custom hypothesis."""
@@ -443,7 +441,7 @@ def render_prd_page():
                 **st.session_state.prd_data["hypothesis"]
             }
             raw_prd_sections = generate_content(
-                st.session_state.api_key,
+                st.secrets["GROQ_API_KEY"],
                 prd_context,
                 "prd_sections"
             )
@@ -642,7 +640,11 @@ def render_final_review_page():
                     **prd['intro_data'],
                     "hypothesis": prd['hypothesis'].get('Statement')
                 }
-                generated_risks = generate_content(st.session_state.api_key, risk_data, "risks")
+                generated_risks = generate_content(
+                    st.secrets["GROQ_API_KEY"], 
+                    risk_data, 
+                    "risks"
+                )
                 if "error" in generated_risks:
                     st.error(generated_risks["error"])
                 else:

@@ -145,7 +145,9 @@ st.markdown("""
     }
 </style>
 <script>
-    window.parent.scrollTo(0, 0);
+    setTimeout(function() {
+        window.parent.scrollTo(0, 0);
+    }, 0);
 </script>
 """, unsafe_allow_html=True)
 
@@ -689,7 +691,7 @@ def render_final_review_page():
                 - Integration with analytics platforms (e.g., Google Analytics, Mixpanel).
                 - More advanced statistical models (e.g., Bayesian).
                 - Team collaboration and commenting features with version history.
-                - Direct Export to Jira, Asana.
+                - Direct export to Confluence and ticket creation in Jira, Asana.
                 """
             )
         except Exception as e:

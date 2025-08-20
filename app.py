@@ -177,6 +177,17 @@ if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
 # --- Helper & Callback Functions ---
+def scroll_to_top():
+    """Injects JavaScript to scroll to the top of the page."""
+    components.html(
+        """
+        <script>
+            window.parent.scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+
 def next_stage():
     """Navigates to the next stage in the process."""
     st.session_state.editing_section = None
@@ -294,6 +305,7 @@ def edit_summary_dialog():
 # --- UI Rendering Functions ---
 
 def render_intro_page():
+    scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 

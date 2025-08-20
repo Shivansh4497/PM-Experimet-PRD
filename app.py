@@ -288,7 +288,10 @@ def edit_summary_dialog():
 
 def render_intro_page():
     st.header("Step 1: The Basics 📝")
-    st.write("Please provide some high-level details about your A/B test.")
+    st.info("""
+        **Welcome!** Let's start by gathering some high-level details about your A/B test. 
+        The more context you provide, the better the generated hypotheses and PRD will be.
+    """)
     
     # Check for the API key in Streamlit secrets
     if "GROQ_API_KEY" not in st.secrets:
@@ -362,7 +365,10 @@ def render_intro_page():
 
 def render_hypothesis_page():
     st.header("Step 2: Hypotheses 🧠")
-    st.write("We've generated a few hypotheses for you. Select your favorite or write your own!")
+    st.info("""
+        **What is a Hypothesis?** A hypothesis is a clear, testable statement about the expected outcome of your experiment. 
+        It should be based on your understanding of user behavior and your product goals. We've generated a few for you below.
+    """)
 
     def select_hypothesis(hypothesis_data):
         """Callback to select a generated hypothesis and immediately move to the next stage."""
@@ -401,14 +407,23 @@ def render_hypothesis_page():
             st.session_state.prd_data["hypothesis"] = enriched
             st.session_state.hypotheses_selected = True
             st.success("Custom hypothesis locked!")
-
-    def continue_to_prd():
-        """Callback to proceed to the PRD stage after selection."""
-        if st.session_state.get("hypotheses_selected", False):
             next_stage()
-        else:
-            st.error("Please select or generate a hypothesis before continuing.")
 
+    st.subheader("Write Your Own Hypothesis")
+    st.text_area("Your Custom Hypothesis", placeholder="e.g., I hypothesize that...", key="custom_hypothesis_input")
+    st.button("Generate from Custom", on_click=generate_from_custom, key="gen_custom_btn")
+
+    if "custom_hypothesis_generated" in st.session_state:
+        st.subheader("Generated Hypothesis Details")
+        enriched = st.session_state.custom_hypothesis_generated
+        st.markdown(f"**Statement:** {enriched.get('Statement', 'N/A')}")
+        st.markdown(f"**Rationale:** {enriched.get('Rationale', 'N/A')}")
+        st.markdown(f"**Behavioral Basis:** {enriched.get('Behavioral Basis', 'N/A')}")
+        st.button("Lock This Hypothesis & Continue", on_click=lock_custom_hypothesis, key="lock_custom_btn")
+
+    st.write("---")
+    
+    st.subheader("Or, Select from our suggestions")
     if 'hypotheses' in st.session_state and isinstance(st.session_state.hypotheses, dict):
         cols = st.columns(len(st.session_state.hypotheses))
         for i, (name, data) in enumerate(st.session_state.hypotheses.items()):
@@ -420,26 +435,12 @@ def render_hypothesis_page():
                     st.markdown(data.get("Rationale", "N/A"))
                     st.subheader("Behavioral Basis")
                     st.markdown(data.get("Behavioral Basis", "N/A"))
-                    st.button(f"Select {name}", key=f"select_{i}", on_click=select_hypothesis, args=(data,))
-
-    st.write("---")
-    st.subheader("Or, Write Your Own Hypothesis")
-    st.text_area("Your Custom Hypothesis", placeholder="e.g., I hypothesize that...", key="custom_hypothesis_input")
-    st.button("Generate from Custom", on_click=generate_from_custom, key="gen_custom_btn")
-
-    if "custom_hypothesis_generated" in st.session_state:
-        st.subheader("Generated Hypothesis Details")
-        enriched = st.session_state.custom_hypothesis_generated
-        st.markdown(f"**Statement:** {enriched.get('Statement', 'N/A')}")
-        st.markdown(f"**Rationale:** {enriched.get('Rationale', 'N/A')}")
-        st.markdown(f"**Behavioral Basis:** {enriched.get('Behavioral Basis', 'N/A')}")
-        st.button("Lock This Hypothesis", on_click=lock_custom_hypothesis, key="lock_custom_btn")
-        st.button("Continue to PRD Draft", on_click=continue_to_prd, key="continue_prd_btn")
+                    st.button(f"Select & Continue", key=f"select_{i}", on_click=select_hypothesis, args=(data,))
 
 
 def render_prd_page():
     st.header("Step 3: PRD Draft ✍️")
-    st.write("We've drafted the core sections of your PRD. Please edit and finalize them.")
+    st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
     if "prd_sections" not in st.session_state.prd_data or not st.session_state.prd_data["prd_sections"]:
         with st.spinner("Drafting PRD sections..."):
@@ -496,7 +497,12 @@ def render_calculations_page():
         st.error(f"⚠️ Experiment calculations are unavailable. Dependency error: {CALC_ERROR_MSG}")
         return
     st.header("Step 4: Experiment Calculations 📊")
-    st.write("Verify the inputs below to calculate your required sample size and duration.")
+    st.info("""
+        **Verify the inputs below to calculate your required sample size and duration.**
+        - **Confidence Level:** The probability that the results are not due to random chance (typically 95%).
+        - **Power Level:** The probability of detecting an effect if there is one (typically 80%).
+        - **Minimum Detectable Effect (MDE):** The smallest change you want to be able to detect.
+    """)
 
     intro_data = st.session_state.prd_data["intro_data"]
     dau = intro_data.get("dau", 10000)
@@ -565,7 +571,7 @@ def render_calculations_page():
 
 def render_final_review_page():
     st.header("Step 5: Final Review & Export 🎉")
-    st.write("Your complete PRD is ready. Review, polish, and export.")
+    st.info("Your complete PRD is ready. Review, polish, and export.")
 
     prd = st.session_state.prd_data
 

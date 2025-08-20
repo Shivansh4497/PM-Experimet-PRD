@@ -143,8 +143,8 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] > span {
-        display: none;
+    button[data-testid="stSidebarNavCollapseButton"] {
+        font-size: 0 !important;
     }
     button[data-testid="stSidebarNavCollapseButton"]::before {
         content: '↔️';

@@ -165,6 +165,8 @@ if "editing_risk" not in st.session_state:
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
+    st.session_state.editing_section = None
+    st.session_state.editing_risk = None
     current_index = STAGES.index(st.session_state.stage)
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]

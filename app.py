@@ -678,6 +678,15 @@ def render_final_review_page():
                 file_name="AB_Testing_PRD.pdf",
                 mime="application/pdf"
             )
+            st.info(
+                """
+                **Upcoming Roadmap Features:**
+                - Integration with analytics platforms (e.g., Google Analytics, Mixpanel).
+                - More advanced statistical models (e.g., Bayesian).
+                - Team collaboration and commenting features with version history.
+                - Direct Export to Jira, Asana.
+                """
+            )
         except Exception as e:
             st.error(f"Error generating PDF: {e}")
 

@@ -89,9 +89,13 @@ def create_pdf(prd):
     power = f"{round(calc.get('power', 0)*100)}%"
     sample_size = calc.get('sample_size', 'N/A')
     sample_size_str = f"{sample_size:,}" if isinstance(sample_size, int) else "N/A"
+    mde = f"{calc.get('min_detectable_effect', 'N/A')}%"
+    target_value = str(intro.get('target_value', 'N/A'))
     
     elements.append(Paragraph(f"<b>Confidence Level:</b> {confidence}", styles['Body']))
     elements.append(Paragraph(f"<b>Power Level:</b> {power}", styles['Body']))
+    elements.append(Paragraph(f"<b>Minimum Detectable Effect:</b> {mde}", styles['Body']))
+    elements.append(Paragraph(f"<b>Target Value:</b> {target_value}", styles['Body']))
     elements.append(Paragraph(f"<b>Sample Size (per variant):</b> {sample_size_str}", styles['Body']))
     elements.append(Paragraph(f"<b>Duration:</b> {calc.get('duration', 'N/A')} days", styles['Body']))
     elements.append(hr)

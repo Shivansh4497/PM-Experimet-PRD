@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from functools import partial
+import streamlit.components.v1 as components
 
 # Import functions from your utility files.
 # Note: Ensure you have these utility files in a 'utils' folder.
@@ -143,19 +144,14 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] {
-        font-size: 0 !important;
+    button[data-testid="stSidebarNavCollapseButton"] span {
+        display: none;
     }
     button[data-testid="stSidebarNavCollapseButton"]::before {
         content: '↔️';
         font-size: 1.5rem;
     }
 </style>
-<script>
-    setTimeout(function() {
-        window.parent.scrollTo(0, 0);
-    }, 0);
-</script>
 """, unsafe_allow_html=True)
 
 
@@ -177,6 +173,17 @@ if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
 # --- Helper & Callback Functions ---
+def scroll_to_top():
+    """Injects JavaScript to scroll to the top of the page."""
+    components.html(
+        """
+        <script>
+            window.parent.scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+
 def next_stage():
     """Navigates to the next stage in the process."""
     st.session_state.editing_section = None
@@ -294,6 +301,7 @@ def edit_summary_dialog():
 # --- UI Rendering Functions ---
 
 def render_intro_page():
+    scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 
@@ -371,6 +379,7 @@ def render_intro_page():
 
 
 def render_hypothesis_page():
+    scroll_to_top()
     st.header("Step 2: Hypotheses 🧠")
     st.info("""
         **What is a Hypothesis?** A hypothesis is a clear, testable statement about the expected outcome of your experiment. 
@@ -446,6 +455,7 @@ def render_hypothesis_page():
 
 
 def render_prd_page():
+    scroll_to_top()
     st.header("Step 3: PRD Draft ✍️")
     st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
@@ -500,6 +510,7 @@ def render_prd_page():
 
 
 def render_calculations_page():
+    scroll_to_top()
     if not CALCULATIONS_AVAILABLE:
         st.error(f"⚠️ Experiment calculations are unavailable. Dependency error: {CALC_ERROR_MSG}")
         return
@@ -577,6 +588,7 @@ def render_calculations_page():
 
 
 def render_final_review_page():
+    scroll_to_top()
     st.header("Step 5: Final Review & Export 🎉")
     st.info("Your complete PRD is ready. Review, polish, and export.")
 

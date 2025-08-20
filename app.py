@@ -144,14 +144,11 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] span {
-        display: none;
-    }
-    button[data-testid="stSidebarNavCollapseButton"]::before {
-        content: '↔️';
-        font-size: 1.5rem;
-    }
 </style>
+<script>
+    window.parent.document.body.scrollTop = 0;
+    window.parent.document.documentElement.scrollTop = 0;
+</script>
 """, unsafe_allow_html=True)
 
 

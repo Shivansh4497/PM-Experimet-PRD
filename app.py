@@ -62,7 +62,7 @@ st.markdown("""
     }
     
     .main .block-container {
-        padding-top: 2rem;
+        padding-top: 2rem !important;
     }
     
     .main-header {
@@ -148,8 +148,8 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] {
-        font-size: 0 !important;
+    button[data-testid="stSidebarNavCollapseButton"] > span {
+        display: none !important;
     }
     button[data-testid="stSidebarNavCollapseButton"]::before {
         content: '↔️';
@@ -177,15 +177,6 @@ if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
 # --- Helper & Callback Functions ---
-def scroll_to_top():
-    """Injects JavaScript to scroll to the top of the page."""
-    js = """
-    <script>
-        window.parent.scrollTo(0, 0);
-    </script>
-    """
-    components.html(js, height=0)
-
 def next_stage():
     """Navigates to the next stage in the process."""
     st.session_state.editing_section = None
@@ -303,7 +294,6 @@ def edit_summary_dialog():
 # --- UI Rendering Functions ---
 
 def render_intro_page():
-    scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 

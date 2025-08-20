@@ -61,6 +61,10 @@ st.markdown("""
         font-family: 'Roboto', sans-serif;
     }
     
+    .main .block-container {
+        padding-top: 2rem;
+    }
+    
     .main-header {
         font-size: 2.5rem;
         font-weight: 700;
@@ -144,6 +148,13 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
+    button[data-testid="stSidebarNavCollapseButton"] {
+        font-size: 0 !important;
+    }
+    button[data-testid="stSidebarNavCollapseButton"]::before {
+        content: '↔️';
+        font-size: 1.5rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -168,14 +179,12 @@ if "editing_risk" not in st.session_state:
 # --- Helper & Callback Functions ---
 def scroll_to_top():
     """Injects JavaScript to scroll to the top of the page."""
-    components.html(
-        """
-        <script>
-            window.parent.scrollTo(0, 0);
-        </script>
-        """,
-        height=0,
-    )
+    js = """
+    <script>
+        window.parent.scrollTo(0, 0);
+    </script>
+    """
+    components.html(js, height=0)
 
 def next_stage():
     """Navigates to the next stage in the process."""

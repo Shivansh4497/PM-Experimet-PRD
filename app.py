@@ -48,6 +48,8 @@ except ImportError as e:
     CALCULATIONS_AVAILABLE = False
     CALC_ERROR_MSG = str(e)
 
+# Set the page layout to wide
+st.set_page_config(layout="wide")
 
 # --- Custom CSS for a Polished UI ---
 st.markdown("""

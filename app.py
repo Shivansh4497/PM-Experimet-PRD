@@ -20,7 +20,7 @@ except ImportError:
                 "Hypothesis 2": {"Statement": "Statement 2", "Rationale": "Rationale 2", "Behavioral Basis": "Basis 2"},
             }
         if content_type == "enrich_hypothesis":
-            return {"Statement": data, "Rationale": "Generated Rationale", "Behavioral Basis": "Generated Basis"}
+            return {"Statement": data.get("custom_hypothesis", ""), "Rationale": "Generated Rationale", "Behavioral Basis": "Generated Basis"}
         if content_type == "prd_sections":
             return {
                 "Problem_Statement": "This is the generated problem statement.",
@@ -162,7 +162,6 @@ if "editing_section" not in st.session_state:
 if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
-
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
@@ -178,6 +177,7 @@ def set_stage(stage_name):
 def set_editing_section(section_title):
     """Sets the currently edited PRD section to trigger the modal."""
     st.session_state.editing_section = section_title
+    st.session_state.editing_risk = None
 
 def set_editing_risk(risk_index):
     """Sets the currently edited risk, clearing section editing."""
@@ -207,6 +207,15 @@ def save_risk_edit(risk_index):
     }
     st.session_state.editing_risk = None # Close the modal
     st.success(f"Changes to Risk {risk_index + 1} saved!")
+
+def save_summary_edit():
+    """Saves changes to the executive summary."""
+    st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.summary_business_goal
+    st.session_state.prd_data["hypothesis"]["Statement"] = st.session_state.summary_hypothesis
+    st.session_state.prd_data["intro_data"]["user_persona"] = st.session_state.summary_user_persona
+    st.session_state.prd_data["intro_data"]["app_description"] = st.session_state.summary_app_description
+    st.session_state.editing_section = None # Close the modal
+    st.success("Executive Summary updated!")
 
 def format_content_for_display(content):
     """Formats list or string content for consistent Markdown display."""
@@ -254,6 +263,18 @@ def edit_risk_dialog(risk_index):
         save_risk_edit(risk_index)
         st.rerun()
 
+@st.dialog("Edit Executive Summary")
+def edit_summary_dialog():
+    """A dialog to edit the executive summary fields."""
+    prd = st.session_state.prd_data
+    st.text_input("Business Goal", value=prd['intro_data'].get('business_goal', ''), key="summary_business_goal")
+    st.text_area("Hypothesis", value=prd['hypothesis'].get('Statement', ''), key="summary_hypothesis")
+    st.text_area("Target User Persona (Optional)", value=prd['intro_data'].get('user_persona', ''), key="summary_user_persona")
+    st.text_area("App Description (Optional)", value=prd['intro_data'].get('app_description', ''), key="summary_app_description")
+    if st.button("Save Changes", key="save_summary_dialog"):
+        save_summary_edit()
+        st.rerun()
+
 # --- UI Rendering Functions ---
 
 def render_intro_page():
@@ -279,8 +300,10 @@ def render_intro_page():
         st.session_state.prd_data["intro_data"]["product_type"] = st.session_state.intro_product_type
         st.session_state.prd_data["intro_data"]["user_persona"] = st.session_state.intro_user_persona
         st.session_state.prd_data["intro_data"]["app_description"] = st.session_state.intro_app_description
-        if st.session_state.intro_metric_type == "Continuous":
-            st.session_state.prd_data["intro_data"]["std_dev"] = st.session_state.intro_std_dev
+        
+        # Safely handle the conditional 'Standard Deviation' field
+        if st.session_state.get("intro_metric_type") == "Continuous":
+            st.session_state.prd_data["intro_data"]["std_dev"] = st.session_state.get("intro_std_dev")
         
         required_fields = ["business_goal", "key_metric", "metric_type", "current_value", "product_area", "target_value", "dau", "product_type"]
         if st.session_state.prd_data["intro_data"]["metric_type"] == "Continuous":
@@ -310,7 +333,9 @@ def render_intro_page():
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type",
                          help="Proportion metrics are percentages (e.g., Conversion Rate, Click-Through Rate). Continuous metrics are numerical averages (e.g., Average Revenue Per Daily Active User, time on page).")
             st.number_input("Current Metric Value", min_value=0.0, value=50.0, help="The current value of your key metric.", key="intro_current_value")
-            if st.session_state.intro_metric_type == "Continuous":
+            
+            # Conditionally display the Standard Deviation field
+            if st.session_state.get("intro_metric_type") == "Continuous":
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev",
                                 help="The standard deviation measures the dispersion of your data around the mean. You can typically find this in your analytics dashboard or by calculating it from historical data.")
 
@@ -345,9 +370,13 @@ def render_hypothesis_page():
             st.error("Please provide your Groq API Key to proceed.")
         elif custom_hypothesis:
             with st.spinner("Generating from custom hypothesis..."):
+                context = {
+                    "custom_hypothesis": custom_hypothesis,
+                    **st.session_state.prd_data["intro_data"]
+                }
                 enriched_data = generate_content(
                     st.session_state.api_key,
-                    custom_hypothesis,
+                    context,
                     "enrich_hypothesis"
                 )
                 if "error" in enriched_data:
@@ -533,9 +562,17 @@ def render_final_review_page():
 
     prd = st.session_state.prd_data
 
+    if st.session_state.editing_section == "executive_summary":
+        edit_summary_dialog()
+
     # --- Section 1: Executive Summary ---
     with st.container(border=True):
-        st.subheader("🚀 Executive Summary")
+        col1, col2 = st.columns([10, 1])
+        with col1:
+            st.subheader("🚀 Executive Summary")
+        with col2:
+            st.button("✏️", key="edit_summary", on_click=set_editing_section, args=("executive_summary",))
+        
         st.markdown(f"**Business Goal:** {prd['intro_data'].get('business_goal', 'N/A')}")
         st.markdown(f"**Hypothesis:** {prd['hypothesis'].get('Statement', 'N/A')}")
         st.markdown(f"**Success Criteria:** Target {prd['intro_data'].get('key_metric', 'N/A')} → {prd['intro_data'].get('target_value', 'N/A')}")
@@ -571,13 +608,24 @@ def render_final_review_page():
     # --- Section 3: Experiment Metrics Dashboard ---
     with st.container(border=True):
         st.subheader("Experiment Metrics Dashboard 📊")
-        metrics_cols = st.columns(4)
-        metrics_cols[0].metric("Confidence", f"{int(prd['calculations'].get('confidence', 0)*100)}%")
-        metrics_cols[1].metric("Power", f"{int(prd['calculations'].get('power', 0)*100)}%")
+        row1_cols = st.columns(3)
+        row1_cols[0].metric("Confidence", f"{int(prd['calculations'].get('confidence', 0)*100)}%")
+        row1_cols[1].metric("Power", f"{int(prd['calculations'].get('power', 0)*100)}%")
+        
+        mde = prd['calculations'].get('min_detectable_effect', 'N/A')
+        mde_str = f"{mde}%" if isinstance(mde, (int, float)) else "N/A"
+        row1_cols[2].metric("Min. Detectable Effect", mde_str)
+
+        row2_cols = st.columns(3)
+        target_value = prd['intro_data'].get('target_value', 'N/A')
+        target_value_str = f"{target_value}" if isinstance(target_value, (int, float)) else "N/A"
+        row2_cols[0].metric("Target Value", target_value_str)
+
         sample_size = prd['calculations'].get('sample_size', 'N/A')
         sample_size_str = f"{sample_size:,}" if isinstance(sample_size, int) else "N/A"
-        metrics_cols[2].metric("Sample Size", sample_size_str, "↑ per variant")
-        metrics_cols[3].metric("Duration", f"{prd['calculations'].get('duration', 'N/A')} days")
+        row2_cols[1].metric("Sample Size", sample_size_str, "↑ per variant")
+        
+        row2_cols[2].metric("Duration", f"{prd['calculations'].get('duration', 'N/A')} days")
 
     # --- Section 4: Risks & Next Steps ---
     with st.container(border=True):
@@ -585,6 +633,8 @@ def render_final_review_page():
 
         def generate_risks():
             """Callback to generate risks and next steps."""
+            st.session_state.editing_section = None
+            st.session_state.editing_risk = None
             with st.spinner("Generating contextual risks..."):
                 risk_data = {
                     **prd['intro_data'],
@@ -612,19 +662,20 @@ def render_final_review_page():
                     st.button("✏️", key=f"edit_risk_{i}", on_click=set_editing_risk, args=(i,))
 
     # --- Section 5: Download Button ---
-    st.subheader("Download PRD")
-    try:
-        # Generate PDF bytes just before rendering the button.
-        # This makes it a single-click download.
-        pdf_bytes = create_pdf(prd)
-        st.download_button(
-            label="📥 Download PRD as PDF",
-            data=pdf_bytes,
-            file_name="AB_Testing_PRD.pdf",
-            mime="application/pdf"
-        )
-    except Exception as e:
-        st.error(f"Error generating PDF: {e}")
+    if st.session_state.prd_data.get("risks"):
+        st.subheader("Download PRD")
+        try:
+            # Generate PDF bytes just before rendering the button.
+            # This makes it a single-click download.
+            pdf_bytes = create_pdf(prd)
+            st.download_button(
+                label="📥 Download PRD as PDF",
+                data=pdf_bytes,
+                file_name="AB_Testing_PRD.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error(f"Error generating PDF: {e}")
 
 
 # --- Sidebar Navigation ---

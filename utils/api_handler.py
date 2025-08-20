@@ -30,6 +30,14 @@ def generate_content(api_key, data, mode="hypotheses"):
 
         # --- Build Prompt based on mode ---
         if mode == "hypotheses":
+            optional_context = ""
+            if data.get("user_persona"):
+                optional_context += f"\\n- Target User Persona: {data['user_persona']}"
+            if data.get("app_description"):
+                optional_context += f"\\n- App Description: {data['app_description']}"
+            
+            if optional_context:
+                optional_context = f"\\nAdditional Context:\\n{optional_context}"
             user_prompt = f"""
             Based on the A/B test inputs, generate 3 strong hypotheses.You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
             For each input think deeply and give highly perosnalised response to the inputs.            
@@ -38,6 +46,14 @@ def generate_content(api_key, data, mode="hypotheses"):
             Return a single JSON object with keys "Hypothesis 1" and "Hypothesis 2".
             """
         elif mode == "prd_sections":
+            optional_context = ""
+            if data.get("user_persona"):
+                optional_context += f"\\n- Target User Persona: {data['user_persona']}"
+            if data.get("app_description"):
+                optional_context += f"\\n- App Description: {data['app_description']}"
+            
+            if optional_context:
+                optional_context = f"\\nAdditional Context:\\n{optional_context}"
             user_prompt = f"""
             You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
             For each input think deeply and give highly perosnalised response to the inputs.
@@ -48,6 +64,14 @@ def generate_content(api_key, data, mode="hypotheses"):
             The value for "Implementation_Plan" MUST be a list of strings, where each string is a distinct step.
             """
         elif mode == "enrich_hypothesis":
+            optional_context = ""
+            if data.get("user_persona"):
+                optional_context += f"\\n- Target User Persona: {data['user_persona']}"
+            if data.get("app_description"):
+                optional_context += f"\\n- App Description: {data['app_description']}"
+            
+            if optional_context:
+                optional_context = f"\\nAdditional Context:\\n{optional_context}"
             user_prompt = f"""
             You are the world's best product manager especiallising in product sense and product intuition. You understand user pschology to the fullest. You are a master retention and monetization expert.
             Enrich this custom hypothesis: "{data.get('custom_hypothesis')}"

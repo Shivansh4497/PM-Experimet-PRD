@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 from functools import partial
-import streamlit.components.v1 as components
+from streamlit_js_eval import streamlit_js_eval  # ✅ Option 2 dependency
 
 # Import functions from your utility files.
 # Note: Ensure you have these utility files in a 'utils' folder.
@@ -174,15 +174,9 @@ if "editing_risk" not in st.session_state:
 
 # --- Helper & Callback Functions ---
 def scroll_to_top():
-    """Injects JavaScript to scroll to the top of the page."""
-    components.html(
-        """
-        <script>
-            window.parent.scrollTo(0, 0);
-        </script>
-        """,
-        height=0,
-    )
+    """Uses streamlit-js-eval to scroll to the top of the main page."""
+    # Executes in the main window context; reliable after rerenders.
+    streamlit_js_eval(js_expressions="window.scrollTo(0, 0)")
 
 def next_stage():
     """Navigates to the next stage in the process."""

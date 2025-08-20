@@ -145,10 +145,6 @@ st.markdown("""
         padding-top: 1rem;
     }
 </style>
-<script>
-    window.parent.document.body.scrollTop = 0;
-    window.parent.document.documentElement.scrollTop = 0;
-</script>
 """, unsafe_allow_html=True)
 
 

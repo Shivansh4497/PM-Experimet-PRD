@@ -721,7 +721,7 @@ def render_final_review_page():
 
 
 # --- Sidebar Navigation ---
-st.sidebar.title("Navigation")
+#st.sidebar.title("Navigation")
 #for s in STAGES:
     # Use partial to pass the stage name to the callback
  #   st.sidebar.button(s, key=f"nav_{s}", on_click=partial(set_stage, s))

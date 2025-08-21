@@ -154,51 +154,65 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Add this right after your existing CSS
+# Add this right after your existing CSS
 st.markdown("""
 <style>
-    /* Hide sidebar collapse button on DESKTOP */
-    [data-testid="stSidebar"] > div:first-child > div:first-child {
-        display: none !important;
-        height: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    /* Desktop: Hide the collapse button but keep sidebar functionality */
+    @media (min-width: 769px) {
+        [data-testid="stSidebar"] > div:first-child > div:first-child {
+            display: none !important;
+        }
+        
+        /* Keep sidebar visible permanently on desktop */
+        [data-testid="stSidebar"] {
+            transform: translateX(0) !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        /* Adjust main content to account for permanent sidebar */
+        .st-emotion-cache-z5fcl4 {
+            padding-left: 300px !important;
+        }
     }
     
-    /* Adjust sidebar padding to compensate for desktop */
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 1rem !important;
-    }
-    
-    /* Hide sidebar collapse button on MOBILE */
+    /* Mobile: Completely hide the sidebar and its toggle button */
     @media (max-width: 768px) {
-        /* Target mobile hamburger menu/collapse button */
-        .st-emotion-cache-1oe5cao {
+        /* Hide the sidebar completely on mobile */
+        [data-testid="stSidebar"] {
             display: none !important;
+            visibility: hidden !important;
+            transform: translateX(-100%) !important;
         }
         
-        /* Alternative mobile selectors */
+        /* Hide the mobile toggle button */
+        .st-emotion-cache-1oe5cao,
         button[aria-label="Close sidebar"],
-        button[aria-label="Open sidebar"],
-        button[title^="Collapse sidebar"],
-        button[title^="Expand sidebar"] {
+        button[aria-label="Open sidebar"] {
             display: none !important;
+            visibility: hidden !important;
         }
         
-        /* Hide the mobile header area that contains the button */
-        .st-emotion-cache-1dj0hjr {
-            display: none !important;
-        }
-        
-        /* Prevent mobile sidebar from overlapping content */
+        /* Adjust main content for hidden sidebar */
         .st-emotion-cache-z5fcl4 {
             padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        /* Hide any element containing the problematic text */
+        *:contains("keyboard_double_arrow_right"),
+        *:contains("keyboard_double_arrow_left") {
+            display: none !important;
+            visibility: hidden !important;
+            font-size: 0 !important;
         }
     }
     
-    /* Nuclear option for any device */
-    button:has(> span.material-icons),
-    button:has(> span:contains("keyboard_double_arrow_right")),
-    button:has(> span:contains("keyboard_double_arrow_left")) {
+    /* Global: Hide any material icons that might contain the text */
+    .material-icons:contains("keyboard_double_arrow_right"),
+    .material-icons:contains("keyboard_double_arrow_left") {
         display: none !important;
         visibility: hidden !important;
     }

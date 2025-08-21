@@ -208,6 +208,8 @@ if "editing_section" not in st.session_state:
     st.session_state.editing_section = None
 if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
+if "scroll_to_top" not in st.session_state:
+    st.session_state.scroll_to_top = False
 
 
 def scroll_to_top():
@@ -224,7 +226,7 @@ def scroll_to_top():
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
-
+    st.session_state.scroll_to_top = True
     st.session_state.editing_section = None
     st.session_state.editing_risk = None
     current_index = STAGES.index(st.session_state.stage)
@@ -235,7 +237,7 @@ def next_stage():
 
 def set_stage(stage_name):
     """Sets the current stage directly."""
-
+    st.session_state.scroll_to_top = True
     # This function is kept for potential future use but is not called by the non-interactive topbar.
     if stage_name in STAGES:
         st.session_state.stage = stage_name
@@ -363,7 +365,6 @@ def render_topbar():
 
 
 def render_intro_page():
-    scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 
@@ -441,7 +442,6 @@ def render_intro_page():
 
 
 def render_hypothesis_page():
-    scroll_to_top()
     st.header("Step 2: Hypotheses 🧠")
     st.info("""
         A hypothesis is a clear, testable statement about the expected outcome. We've generated a few for you below.
@@ -505,7 +505,6 @@ def render_hypothesis_page():
 
 
 def render_prd_page():
-    scroll_to_top()
     st.header("Step 3: PRD Draft ✍️")
     st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
@@ -536,7 +535,6 @@ def render_prd_page():
 
 
 def render_calculations_page():
-    scroll_to_top()
     st.header("Step 4: Experiment Calculations 📊")
     st.info("""
         Verify the inputs below to calculate your required sample size and duration.
@@ -591,7 +589,6 @@ def render_calculations_page():
 
 
 def render_final_review_page():
-    scroll_to_top()
     st.header("Step 5: Final Review & Export 🎉")
     st.info("Your complete PRD is ready. Review, polish, and export.")
 
@@ -682,3 +679,7 @@ elif st.session_state.stage == "Calculations":
     render_calculations_page()
 elif st.session_state.stage == "Review":
     render_final_review_page()
+
+if st.session_state.get("scroll_to_top"):
+    scroll_to_top()
+    st.session_state.scroll_to_top = False # Reset the flag

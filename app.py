@@ -156,7 +156,7 @@ st.markdown("""
 # Add this right after your existing CSS
 st.markdown("""
 <style>
-    /* Nuclear option - completely hide the sidebar collapse area */
+    /* Hide sidebar collapse button on DESKTOP */
     [data-testid="stSidebar"] > div:first-child > div:first-child {
         display: none !important;
         height: 0 !important;
@@ -164,9 +164,43 @@ st.markdown("""
         margin: 0 !important;
     }
     
-    /* Adjust sidebar padding to compensate */
+    /* Adjust sidebar padding to compensate for desktop */
     [data-testid="stSidebar"] > div:first-child {
         padding-top: 1rem !important;
+    }
+    
+    /* Hide sidebar collapse button on MOBILE */
+    @media (max-width: 768px) {
+        /* Target mobile hamburger menu/collapse button */
+        .st-emotion-cache-1oe5cao {
+            display: none !important;
+        }
+        
+        /* Alternative mobile selectors */
+        button[aria-label="Close sidebar"],
+        button[aria-label="Open sidebar"],
+        button[title^="Collapse sidebar"],
+        button[title^="Expand sidebar"] {
+            display: none !important;
+        }
+        
+        /* Hide the mobile header area that contains the button */
+        .st-emotion-cache-1dj0hjr {
+            display: none !important;
+        }
+        
+        /* Prevent mobile sidebar from overlapping content */
+        .st-emotion-cache-z5fcl4 {
+            padding-left: 1rem !important;
+        }
+    }
+    
+    /* Nuclear option for any device */
+    button:has(> span.material-icons),
+    button:has(> span:contains("keyboard_double_arrow_right")),
+    button:has(> span:contains("keyboard_double_arrow_left")) {
+        display: none !important;
+        visibility: hidden !important;
     }
 </style>
 """, unsafe_allow_html=True)

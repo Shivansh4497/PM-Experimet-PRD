@@ -57,8 +57,8 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
     
-    # Hide the sidebar collapse icon text 
-    button[data-testid="stSidebarNavCollapseButton"] p {
+    /* Hide the sidebar collapse icon text by targeting any child element that is not the SVG icon */
+    button[data-testid="stSidebarNavCollapseButton"] > *:not(svg) {
         display: none;
     }
 

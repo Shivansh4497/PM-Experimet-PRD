@@ -149,16 +149,7 @@ st.markdown("""
         padding-top: 1rem;
     }
     button[data-testid="stSidebarNavCollapseButton"] {
-        visibility: hidden !important;
-    }
-
-    button[data-testid="stSidebarNavCollapseButton"]::after {
-        content: '→' !important;
-        visibility: visible !important;
-        font-size: 1.5rem;
-        position: absolute;
-        left: 0;
-        top: 0;
+        display: none !important;
     }
 </style>
 """, unsafe_allow_html=True)

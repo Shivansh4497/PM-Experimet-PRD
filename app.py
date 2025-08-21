@@ -49,35 +49,60 @@ except ImportError as e:
     CALCULATIONS_AVAILABLE = False
     CALC_ERROR_MSG = str(e)
 
-# Set the page layout to wide
-st.set_page_config(layout="wide")
+# Set the page layout to wide and hide the default sidebar
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # --- Custom CSS for a Polished UI ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
     
-    //* On desktop, hide the collapse button to make the sidebar permanent */
-    @media (min-width: 769px) {
-        button[data-testid="stSidebarNavCollapseButton"] {
-            display: none !important;
-        }
+    /* --- HIDE DEFAULT STREAMLIT UI --- */
+    /* Hide the default sidebar and its expand/collapse button */
+    section[data-testid="stSidebar"] {
+        display: none !important;
+    }
+    button[data-testid="stSidebarNavCollapseButton"] {
+        display: none !important;
     }
 
-    /* On mobile, hide the entire sidebar */
-    @media (max-width: 768px) {
-        section[data-testid="stSidebarNavCollapseButton"] {
-            display: none !important;
-            width: 0 !important;
-            min-width: 0 !important;
-        }
-
+    /* --- TOPBAR STYLES --- */
+    .top-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #30363d;
+        margin-bottom: 2rem;
+    }
+    .top-nav .stButton > button {
+        background-color: transparent;
+        border: 2px solid transparent;
+        color: #c9d1d9;
+        font-weight: bold;
+        padding: 8px 16px;
+        margin: 0 5px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    .top-nav .stButton > button:hover {
+        background-color: #161b22;
+        border-color: #30363d;
+    }
+    /* Style for the active/current stage button */
+    .top-nav .stButton > button.active-stage {
+        background-color: #216d33;
+        color: white;
+        border-color: #2ea043;
+    }
+    
+    /* --- GENERAL STYLES --- */
     html, body, [class*="st-"] {
         font-family: 'Roboto', sans-serif;
     }
     
     .main .block-container {
-        padding-top: 2rem !important;
+        padding-top: 1rem !important; /* Reduced padding for topbar */
     }
     
     .main-header {
@@ -163,10 +188,6 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[title="Collapse sidebar"] > span {
-        visibility: hidden;
-    }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -190,17 +211,6 @@ if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
 # --- Helper & Callback Functions ---
-#def scroll_to_top():
-   # """Injects JavaScript to scroll to the top of the page."""
-    #components.html(
-     #   """
-      #  <script>
-       #     window.parent.scrollTo(0, 0);
-        #</script>
-        #""",
-       # height=0,
-    #)
-
 def next_stage():
     """Navigates to the next stage in the process."""
     st.session_state.editing_section = None
@@ -317,8 +327,45 @@ def edit_summary_dialog():
 
 # --- UI Rendering Functions ---
 
+def render_topbar():
+    """Renders the horizontal top navigation bar."""
+    current_stage_index = STAGES.index(st.session_state.stage)
+    
+    # Use a container with a custom class for styling
+    with st.container():
+        st.markdown('<div class="top-nav">', unsafe_allow_html=True)
+        
+        cols = st.columns(len(STAGES))
+        for i, stage in enumerate(STAGES):
+            with cols[i]:
+                # Determine if the button is for the current stage
+                button_class = "active-stage" if i == current_stage_index else ""
+                
+                # We need to inject HTML to apply the class to the button
+                button_html = f"""
+                <script>
+                    var buttons = window.parent.document.querySelectorAll('button');
+                    buttons.forEach(function(button) {{
+                        if (button.innerText.trim() === '{stage}') {{
+                            button.classList.add('{button_class}');
+                        }}
+                    }});
+                </script>
+                """
+                st.markdown(button_html, unsafe_allow_html=True)
+
+                # Render the button. It's only clickable if the stage has been visited.
+                st.button(
+                    stage,
+                    key=f"nav_{stage}",
+                    on_click=set_stage,
+                    args=(stage,),
+                    disabled=i > current_stage_index
+                )
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
 def render_intro_page():
-    #scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 
@@ -406,7 +453,6 @@ def render_intro_page():
 
 
 def render_hypothesis_page():
-    #scroll_to_top()
     st.header("Step 2: Hypotheses 🧠")
     st.info("""
         **What is a Hypothesis?** A hypothesis is a clear, testable statement about the expected outcome of your experiment. 
@@ -482,7 +528,6 @@ def render_hypothesis_page():
 
 
 def render_prd_page():
-    #scroll_to_top()
     st.header("Step 3: PRD Draft ✍️")
     st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
@@ -537,10 +582,6 @@ def render_prd_page():
 
 
 def render_calculations_page():
-    #scroll_to_top()
-    if not CALCULATIONS_AVAILABLE:
-        st.error(f"⚠️ Experiment calculations are unavailable. Dependency error: {CALC_ERROR_MSG}")
-        return
     st.header("Step 4: Experiment Calculations 📊")
     st.info("""
         **Verify the inputs below to calculate your required sample size and duration.**
@@ -615,7 +656,6 @@ def render_calculations_page():
 
 
 def render_final_review_page():
-    #scroll_to_top()
     st.header("Step 5: Final Review & Export 🎉")
     st.info("Your complete PRD is ready. Review, polish, and export.")
 
@@ -666,7 +706,7 @@ def render_final_review_page():
 
     # --- Section 3: Experiment Metrics Dashboard ---
     with st.container(border=True):
-        st.subheader("Experiment Metrics Dashboard 📊")
+        st.subheader("Experiment Metrics Dashboard �")
         row1_cols = st.columns(3)
         row1_cols[0].metric("Confidence", f"{int(prd['calculations'].get('confidence', 0)*100)}%")
         row1_cols[1].metric("Power", f"{int(prd['calculations'].get('power', 0)*100)}%")
@@ -750,19 +790,9 @@ def render_final_review_page():
             st.error(f"Error generating PDF: {e}")
 
 
-# --- Sidebar Navigation ---
-st.sidebar.title("Progress Tracker")
-current_stage_index = STAGES.index(st.session_state.stage)
-for i, stage in enumerate(STAGES):
-    if i < current_stage_index:
-        st.sidebar.markdown(f"✅ **{stage}**")
-    elif i == current_stage_index:
-        st.sidebar.markdown(f"➡️ **{stage}**")
-    else:
-        st.sidebar.markdown(f"⚪️ {stage}")
-
 # --- Main Rendering Logic ---
-# This part remains the same, as it correctly routes to the right page based on the stage.
+render_topbar()
+
 if st.session_state.stage == "Intro":
     render_intro_page()
 elif st.session_state.stage == "Hypothesis":
@@ -773,3 +803,4 @@ elif st.session_state.stage == "Calculations":
     render_calculations_page()
 elif st.session_state.stage == "Review":
     render_final_review_page()
+�

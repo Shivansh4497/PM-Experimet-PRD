@@ -7,6 +7,31 @@ import streamlit.components.v1 as components
 # Import functions from your utility files.
 # Note: Ensure you have these utility files in a 'utils' folder.
 # For this example, placeholder functions will be used if imports fail.
+
+# --- Option Lists ---
+business_goals = [
+    "Increase retention",
+    "Boost DAU",
+    "Improve conversion",
+    "Monetization growth"
+]
+
+product_areas = [
+    "Onboarding",
+    "Search",
+    "Recommendations",
+    "Payments",
+    "Notifications"
+]
+
+metrics = [
+    "DAU",
+    "WAU",
+    "Retention D30",
+    "CTR",
+    "Revenue per user"
+]
+
 try:
     from utils.api_handler import generate_content
     from utils.calculations import calculate_sample_size_proportion, calculate_sample_size_continuous, calculate_duration
@@ -379,6 +404,7 @@ def render_intro_page():
 
     def process_intro_form():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
+        # Safely get values from session_state
         # Safely get values from session_state
         st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.get("intro_business_goal_custom", "") if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
         st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.get("intro_key_metric_custom", "") if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select

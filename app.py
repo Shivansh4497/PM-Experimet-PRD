@@ -213,11 +213,13 @@ if "scroll_to_top" not in st.session_state:
 
 
 def scroll_to_top():
-    """Injects JavaScript to scroll to the top of the page."""
+    """Injects JavaScript to scroll to the top of the page after a brief delay."""
     components.html(
         """
         <script>
-            window.parent.scrollTo(0, 0);
+            setTimeout(function(){
+                window.parent.scrollTo(0, 0);
+            }, 100); // 100ms delay
         </script>
         """,
         height=0,

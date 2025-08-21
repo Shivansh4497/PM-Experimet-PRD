@@ -379,9 +379,10 @@ def render_intro_page():
 
     def process_intro_form():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
-        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal_custom if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
-        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric_custom if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
-        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area_custom if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
+        # Safely get values from session_state
+        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.get("intro_business_goal_custom", "") if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
+        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.get("intro_key_metric_custom", "") if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
+        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.get("intro_product_area_custom", "") if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
         st.session_state.prd_data["intro_data"]["metric_type"] = st.session_state.intro_metric_type
         st.session_state.prd_data["intro_data"]["current_value"] = st.session_state.intro_current_value
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value

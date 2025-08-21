@@ -364,6 +364,7 @@ def render_topbar():
 
 
 def render_intro_page():
+    scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 
@@ -441,6 +442,7 @@ def render_intro_page():
 
 
 def render_hypothesis_page():
+    scroll_to_top()
     st.header("Step 2: Hypotheses 🧠")
     st.info("""
         A hypothesis is a clear, testable statement about the expected outcome. We've generated a few for you below.
@@ -504,6 +506,7 @@ def render_hypothesis_page():
 
 
 def render_prd_page():
+    scroll_to_top()
     st.header("Step 3: PRD Draft ✍️")
     st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
@@ -534,6 +537,7 @@ def render_prd_page():
 
 
 def render_calculations_page():
+    scroll_to_top()
     st.header("Step 4: Experiment Calculations 📊")
     st.info("""
         Verify the inputs below to calculate your required sample size and duration.
@@ -588,6 +592,7 @@ def render_calculations_page():
 
 
 def render_final_review_page():
+    scroll_to_top()
     st.header("Step 5: Final Review & Export 🎉")
     st.info("Your complete PRD is ready. Review, polish, and export.")
 

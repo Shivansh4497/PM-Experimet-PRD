@@ -64,7 +64,11 @@ st.markdown("""
         }
     }
 
-   
+    /* On mobile, hide the entire sidebar */
+    @media (max-width: 768px) {
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
 
     html, body, [class*="st-"] {
         font-family: 'Roboto', sans-serif;

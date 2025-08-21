@@ -148,9 +148,13 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
+    button[data-testid="collapsedControl"] span {
+        display: none !important;
+    }
+
     button[data-testid="collapsedControl"]::before {
-        content: "☰" !important; /* Replace with any icon/text you prefer */
-        font-family: initial !important;
+        content: "☰" !important;
+        font-size: 20px !important;
     }
 </style>
 """, unsafe_allow_html=True)

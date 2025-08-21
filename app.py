@@ -148,7 +148,9 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-   
+    button[title="Collapse sidebar"] > span {
+        visibility: hidden;
+    }
 
 </style>
 """, unsafe_allow_html=True)

@@ -64,7 +64,9 @@ st.markdown("""
     button[data-testid="stSidebarNavCollapseButton"] {
         display: none !important;
     }
-
+    div[data-testid="stAppViewContainer"] {
+        margin-top: -6rem; /* Adjust this value as needed */
+    }
     /* --- APP HEADER STYLES --- */
     .app-header {
         text-align: center;

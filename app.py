@@ -65,6 +65,24 @@ st.markdown("""
         display: none !important;
     }
 
+    /* --- APP HEADER STYLES --- */
+    .app-header {
+        text-align: center;
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+    }
+    .app-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin: 0;
+    }
+    .app-header p {
+        font-size: 1.1rem;
+        color: #8b949e;
+        margin: 0;
+    }
+
     /* --- TOPBAR STYLES --- */
     .top-nav {
         display: flex;
@@ -117,35 +135,6 @@ st.markdown("""
         padding-top: 1rem !important;
     }
     
-    .main-header {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #e0e0e0;
-        text-align: center;
-        padding-bottom: 20px;
-    }
-
-    .st-emotion-cache-18ni7ap, .st-emotion-cache-1r6r8k {
-        background-color: transparent !important;
-    }
-
-    .st-emotion-cache-z5fcl4 {
-        background-color: #0d1117;
-        color: #f0f0f0;
-    }
-
-    h1, h2, h3, h4, h5, h6 {
-        color: #e0e0e0;
-    }
-    
-    .st-emotion-cache-6qob1r {
-        background-color: #161b22;
-        border-radius: 10px;
-        padding: 20px;
-        border: 1px solid #30363d;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    }
-    
     .stButton > button {
         background-color: #216d33;
         color: white;
@@ -160,41 +149,41 @@ st.markdown("""
         transform: scale(1.05);
     }
 
+    /* Additional restored styles */
+    .st-emotion-cache-18ni7ap, .st-emotion-cache-1r6r8k {
+        background-color: transparent !important;
+    }
+    .st-emotion-cache-z5fcl4 {
+        background-color: #0d1117;
+        color: #f0f0f0;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #e0e0e0;
+    }
+    .st-emotion-cache-6qob1r {
+        background-color: #161b22;
+        border-radius: 10px;
+        padding: 20px;
+        border: 1px solid #30363d;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
     .st-expander details {
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 8px;
         padding: 10px;
     }
-    
     .st-expander details summary {
         color: #c9d1d9;
     }
-
     .css-1cpxqw2 {
         background-color: #161b22;
         border: 1px solid #30363d;
         border-radius: 8px;
         color: #c9d1d9;
     }
-
     .stAlert {
         border-radius: 8px;
-    }
-
-    .st-emotion-cache-163kly3 {
-        padding: 20px;
-    }
-
-    .st-emotion-cache-h5g5k2 {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-top: 1rem;
-    }
-    .css-15tx6o4 {
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-top: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -325,6 +314,15 @@ def edit_summary_dialog():
         st.rerun()
 
 # --- UI Rendering Functions ---
+
+def render_header():
+    """Renders the main application header."""
+    st.markdown("""
+        <div class="app-header">
+            <h1>A/B Test PRD Generator</h1>
+            <p>Create comprehensive Product Requirement Documents for your experiments.</p>
+        </div>
+    """, unsafe_allow_html=True)
 
 def render_topbar():
     """Renders the horizontal top navigation bar as a non-interactive progress indicator."""
@@ -646,6 +644,7 @@ def render_final_review_page():
 
 
 # --- Main Rendering Logic ---
+render_header()
 render_topbar()
 
 if st.session_state.stage == "Intro":

@@ -463,6 +463,7 @@ def render_intro_page():
 
 
 
+    with st.form("intro_form"):
         st.subheader("Business & Product Details")
         col1, col2 = st.columns(2)
         with col1:
@@ -492,8 +493,8 @@ def render_intro_page():
         st.text_area("Target User Persona (Optional)", placeholder="e.g., Tech-savvy millennials...", key="intro_user_persona")
         st.text_area("App Description (Optional)", placeholder="e.g., A mobile app for tracking water intake...", key="intro_app_description")
 
-        if st.button("Generate Hypotheses", on_click=process_intro_form):
-            pass
+        st.form_submit_button("Generate Hypotheses", on_click=process_intro_form)
+
 
 def render_hypothesis_page():
     st.header("Step 2: Hypotheses 🧠")

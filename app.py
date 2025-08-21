@@ -132,7 +132,7 @@ st.markdown("""
     }
     
     .main .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0 !important;
     }
     
     .stButton > button {

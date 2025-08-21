@@ -154,6 +154,44 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+components.html("""
+<script>
+// Function to remove the keyboard_double_arrow_right text
+function removeSidebarButtonText() {
+    const collapseButton = document.querySelector('button[data-testid="stSidebarNavCollapseButton"]');
+    if (collapseButton) {
+        // Remove all text content and children
+        collapseButton.textContent = '';
+        collapseButton.innerHTML = '';
+        
+        // Optional: Add a custom icon if you want
+        collapseButton.innerHTML = '→';
+        
+        console.log('Sidebar button text removed');
+    }
+}
+
+// Run on page load and whenever DOM changes
+removeSidebarButtonText();
+
+// Use MutationObserver to catch dynamic changes
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+            removeSidebarButtonText();
+        }
+    });
+});
+
+// Start observing
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Also check periodically as a fallback
+setInterval(removeSidebarButtonText, 1000);
+</script>
+""", height=0)
+
+
 
 # --- Constants & State Management ---
 STAGES = ["Intro", "Hypothesis", "PRD", "Calculations", "Review"]

@@ -320,7 +320,7 @@ def render_header():
     st.markdown("""
         <div class="app-header">
             <h1>A/B Test PRD Generator</h1>
-            <p>Create comprehensive Product Requirement Documents for your experiments.</p>
+            <p>Create AI Powered Product Requirement Documents for your experiments.</p>
         </div>
     """, unsafe_allow_html=True)
 

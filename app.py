@@ -66,7 +66,7 @@ st.markdown("""
 
     /* On mobile, hide the entire sidebar */
     @media (max-width: 768px) {
-        section[data-testid="stSidebar"] {
+        section[data-testid="stSidebarNavCollapseButton"] {
             display: none !important;
         }
 

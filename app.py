@@ -219,7 +219,7 @@ def scroll_to_top():
         """,
         height=0,
     )
-    
+
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
@@ -234,6 +234,7 @@ def next_stage():
 
 def set_stage(stage_name):
     """Sets the current stage directly."""
+    scroll_to_top()
     # This function is kept for potential future use but is not called by the non-interactive topbar.
     if stage_name in STAGES:
         st.session_state.stage = stage_name

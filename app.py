@@ -57,29 +57,14 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
     
-    /* On desktop, hide the collapse button to make the sidebar permanent */
+    //* On desktop, hide the collapse button to make the sidebar permanent */
     @media (min-width: 769px) {
         button[data-testid="stSidebarNavCollapseButton"] {
             display: none !important;
         }
     }
 
-    /* On mobile, hide the entire sidebar and ensure main content takes full width */
-    @media (max-width: 768px) {
-        /* Force the sidebar off-screen and remove its dimensions */
-        section[data-testid="stSidebar"] {
-            display: none !important;
-            width: 0 !important;
-            min-width: 0 !important;
-            position: fixed !important;
-            transform: translateX(-100%) !important;
-            transition: none !important;
-        }
-        /* Ensure the main content area has no left margin */
-        div[data-testid="stAppViewContainer"] {
-            margin-left: 0 !important;
-        }
-    }
+    
 
     html, body, [class*="st-"] {
         font-family: 'Roboto', sans-serif;

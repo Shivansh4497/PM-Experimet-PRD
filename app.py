@@ -152,7 +152,7 @@ st.markdown("""
         display: none !important;
     }
     button[data-testid="stSidebarNavCollapseButton"]::before {
-        content: '↔️';
+        content: '✅';
         font-size: 1.5rem;
     }
 </style>

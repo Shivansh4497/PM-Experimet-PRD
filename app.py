@@ -175,7 +175,24 @@ st.markdown("""
         background-color: #2ea043;
         transform: scale(1.05);
     }
-
+    /* --- SUGGESTION BUTTON STYLES --- */
+    .suggestion-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 1rem;
+    }
+    .suggestion-buttons .stButton > button {
+        background-color: #21262d;
+        border: 1px solid #30363d;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        min-height: auto;
+    }
+    .suggestion-buttons .stButton > button:hover {
+        border-color: #8b949e;
+        color: #c9d1d9;
+    }
     /* Additional restored styles */
     .st-emotion-cache-18ni7ap, .st-emotion-cache-1r6r8k {
         background-color: transparent !important;
@@ -406,9 +423,9 @@ def render_intro_page():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
         # Safely get values from session_state
         # Safely get values from session_state
-        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.get("intro_business_goal_custom", "") if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
-        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.get("intro_key_metric_custom", "") if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
-        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.get("intro_product_area_custom", "") if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
+        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal
+        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric
+        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area
         st.session_state.prd_data["intro_data"]["metric_type"] = st.session_state.intro_metric_type
         st.session_state.prd_data["intro_data"]["current_value"] = st.session_state.intro_current_value
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value
@@ -434,29 +451,28 @@ def render_intro_page():
                     next_stage()
         else:
             st.error("Please fill out all the fields to continue.")
-    def update_text_from_select(select_key, text_key):
-        selected_option = st.session_state[select_key]
-        if selected_option == "Other...":
-            st.session_state[text_key] = ""
-        else:
-            st.session_state[text_key] = selected_option
+    def suggestion_buttons(options, text_key):
+        st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
+        cols = st.columns(len(options))
+        for i, option in enumerate(options):
+            with cols[i]:
+                if st.button(option, key=f"{text_key}_{option}"):
+                    st.session_state[text_key] = option
+        st.markdown('</div>', unsafe_allow_html=True)
+
 
 
     with st.form("intro_form"):
         st.subheader("Business & Product Details")
         col1, col2 = st.columns(2)
         with col1:
-            business_goals = ["Increase user engagement", "Improve user retention", "Increase revenue", "Other..."]
-            st.selectbox("Business Goal", business_goals, key="intro_business_goal_select")
-            if st.session_state.get("intro_business_goal_select") == "Other...":
-                st.text_input("Custom Business Goal", key="intro_business_goal_custom")
+            st.text_input("Business Goal", key="intro_business_goal")
+            business_goals = ["Increase user engagement", "Improve user retention", "Increase revenue"]
+            suggestion_buttons(business_goals, "intro_business_goal")
 
-
-            key_metrics = ["Login Rate", "ARPDAU", "Conversion Rate", "Click-Through Rate", "Other..."]
-            st.selectbox("Key Metric", key_metrics, key="intro_key_metric_select")
-            if st.session_state.get("intro_key_metric_select") == "Other...":
-                st.text_input("Custom Key Metric", key="intro_key_metric_custom")
-
+            st.text_input("Key Metric", key="intro_key_metric")
+            key_metrics = ["Login Rate", "ARPDAU", "Conversion Rate", "Click-Through Rate"]
+            suggestion_buttons(key_metrics, "intro_key_metric")
 
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type", help="Proportion metrics are percentages (e.g., Conversion Rate). Continuous metrics are numerical averages (e.g., ARPDAU).")
             st.number_input("Current Metric Value", min_value=0.0, value=50.0, key="intro_current_value")
@@ -464,11 +480,9 @@ def render_intro_page():
             if st.session_state.get("intro_metric_type") == "Continuous":
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev", help="The standard deviation of your metric.")
         with col2:
-            product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout", "Other..."]
-            st.selectbox("Product Area", product_areas, key="intro_product_area_select")
-            if st.session_state.get("intro_product_area_select") == "Other...":
-                st.text_input("Custom Product Area", key="intro_product_area_custom")
-
+            st.text_input("Product Area", key="intro_product_area")
+            product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout"]
+            suggestion_buttons(product_areas, "intro_product_area")
 
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, key="intro_dau")

@@ -148,9 +148,7 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    .st-emotion-cache-6qob1r button[data-testid="collapsedControl"],
-    .st-emotion-cache-z5fcl4 button[data-testid="collapsedControl"] {
-        display: none !important;
+   
 
 </style>
 """, unsafe_allow_html=True)
@@ -754,59 +752,6 @@ def render_final_review_page():
         except Exception as e:
             st.error(f"Error generating PDF: {e}")
 
-
-# --- Remove sidebar collapse button with JavaScript ---
-
-# --- Remove sidebar collapse button with JavaScript ---
-components.html("""
-<script>
-    function removeCollapseButton() {
-        // Try multiple selectors to find the collapse button
-        const selectors = [
-            'button[data-testid="collapsedControl"]',
-            'button:contains("keyboard_double_arrow_right")',
-            'button span:contains("keyboard_double_arrow_right")',
-            'section[data-testid="stSidebar"] button:first-child'
-        ];
-        
-        for (const selector of selectors) {
-            const buttons = document.querySelectorAll(selector);
-            buttons.forEach(button => {
-                console.log('Removing button with selector:', selector, button);
-                button.remove();
-            });
-        }
-    }
-    
-    // Run immediately and set up intensive monitoring
-    removeCollapseButton();
-    
-    // More aggressive observer
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            if (mutation.addedNodes.length > 0) {
-                removeCollapseButton();
-            }
-        });
-    });
-    
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: false,
-        characterData: false
-    });
-    
-    // Very frequent checking as fallback
-    setInterval(removeCollapseButton, 500);
-    
-    // Also check on various events
-    document.addEventListener('load', removeCollapseButton);
-    window.addEventListener('load', removeCollapseButton);
-    document.addEventListener('DOMContentLoaded', removeCollapseButton);
-    
-</script>
-""", height=0, width=0)
 
 # --- Sidebar Navigation ---
 st.sidebar.title("Progress Tracker")

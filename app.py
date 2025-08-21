@@ -153,71 +153,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Add this right after your existing CSS
-# Add this right after your existing CSS
-st.markdown("""
-<style>
-    /* Desktop: Hide the collapse button but keep sidebar functionality */
-    @media (min-width: 769px) {
-        [data-testid="stSidebar"] > div:first-child > div:first-child {
-            display: none !important;
-        }
-        
-        /* Keep sidebar visible permanently on desktop */
-        [data-testid="stSidebar"] {
-            transform: translateX(0) !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-        
-        /* Adjust main content to account for permanent sidebar */
-        .st-emotion-cache-z5fcl4 {
-            padding-left: 300px !important;
-        }
-    }
-    
-    /* Mobile: Completely hide the sidebar and its toggle button */
-    @media (max-width: 768px) {
-        /* Hide the sidebar completely on mobile */
-        [data-testid="stSidebar"] {
-            display: none !important;
-            visibility: hidden !important;
-            transform: translateX(-100%) !important;
-        }
-        
-        /* Hide the mobile toggle button */
-        .st-emotion-cache-1oe5cao,
-        button[aria-label="Close sidebar"],
-        button[aria-label="Open sidebar"] {
-            display: none !important;
-            visibility: hidden !important;
-        }
-        
-        /* Adjust main content for hidden sidebar */
-        .st-emotion-cache-z5fcl4 {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            width: 100% !important;
-            max-width: 100% !important;
-        }
-        
-        /* Hide any element containing the problematic text */
-        *:contains("keyboard_double_arrow_right"),
-        *:contains("keyboard_double_arrow_left") {
-            display: none !important;
-            visibility: hidden !important;
-            font-size: 0 !important;
-        }
-    }
-    
-    /* Global: Hide any material icons that might contain the text */
-    .material-icons:contains("keyboard_double_arrow_right"),
-    .material-icons:contains("keyboard_double_arrow_left") {
-        display: none !important;
-        visibility: hidden !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 # --- Constants & State Management ---
 STAGES = ["Intro", "Hypothesis", "PRD", "Calculations", "Review"]
@@ -798,15 +733,16 @@ def render_final_review_page():
 
 
 # --- Sidebar Navigation ---
-st.sidebar.title("Progress Tracker")
-current_stage_index = STAGES.index(st.session_state.stage)
-for i, stage in enumerate(STAGES):
-    if i < current_stage_index:
-        st.sidebar.markdown(f"✅ **{stage}**")
-    elif i == current_stage_index:
-        st.sidebar.markdown(f"➡️ **{stage}**")
-    else:
-        st.sidebar.markdown(f"⚪️ {stage}")
+with st.container():
+    st.markdown("### Progress Tracker")
+    current_stage_index = STAGES.index(st.session_state.stage)
+    for i, stage in enumerate(STAGES):
+        if i < current_stage_index:
+            st.markdown(f"✅ **{stage}**")
+        elif i == current_stage_index:
+            st.markdown(f"➡️ **{stage}**")
+        else:
+            st.markdown(f"⚪️ {stage}")
 
 # --- Main Rendering Logic ---
 # This part remains the same, as it correctly routes to the right page based on the stage.

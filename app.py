@@ -756,22 +756,38 @@ def render_final_review_page():
 
 
 # --- Remove sidebar collapse button with JavaScript ---
+
+# --- Remove sidebar collapse button with JavaScript ---
 components.html("""
 <script>
-    // Function to remove the collapse button
     function removeCollapseButton() {
-        const collapseButtons = document.querySelectorAll('button[data-testid="collapsedControl"]');
-        collapseButtons.forEach(button => {
-            button.remove();
-        });
+        // Try multiple selectors to find the collapse button
+        const selectors = [
+            'button[data-testid="collapsedControl"]',
+            'button:contains("keyboard_double_arrow_right")',
+            'button span:contains("keyboard_double_arrow_right")',
+            'section[data-testid="stSidebar"] button:first-child'
+        ];
+        
+        for (const selector of selectors) {
+            const buttons = document.querySelectorAll(selector);
+            buttons.forEach(button => {
+                console.log('Removing button with selector:', selector, button);
+                button.remove();
+            });
+        }
     }
     
-    // Remove immediately and set up observer for dynamic content
+    // Run immediately and set up intensive monitoring
     removeCollapseButton();
     
-    // Set up mutation observer to catch if button is added later
-    const observer = new MutationObserver(function(mutations) {
-        removeCollapseButton();
+    // More aggressive observer
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length > 0) {
+                removeCollapseButton();
+            }
+        });
     });
     
     observer.observe(document.body, {
@@ -781,8 +797,14 @@ components.html("""
         characterData: false
     });
     
-    // Also check periodically (as a fallback)
-    setInterval(removeCollapseButton, 1000);
+    // Very frequent checking as fallback
+    setInterval(removeCollapseButton, 500);
+    
+    // Also check on various events
+    document.addEventListener('load', removeCollapseButton);
+    window.addEventListener('load', removeCollapseButton);
+    document.addEventListener('DOMContentLoaded', removeCollapseButton);
+    
 </script>
 """, height=0, width=0)
 

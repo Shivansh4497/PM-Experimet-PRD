@@ -208,16 +208,17 @@ if "editing_section" not in st.session_state:
     st.session_state.editing_section = None
 if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
-if "scroll_to_top" not in st.session_state:
-    st.session_state.scroll_to_top = False
+if "just_navigated" not in st.session_state:
+    st.session_state.just_navigated = False
+
 
 
 def scroll_to_top():
-    """Injects JavaScript to jump to the top of the page using an anchor."""
+    """Injects JavaScript to scroll to the top of the page."""
     components.html(
         """
         <script>
-            window.parent.location.hash = "#top";
+            window.parent.scrollTo(0, 0);
         </script>
         """,
         height=0,
@@ -226,21 +227,23 @@ def scroll_to_top():
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
-    st.session_state.scroll_to_top = True
     st.session_state.editing_section = None
     st.session_state.editing_risk = None
     current_index = STAGES.index(st.session_state.stage)
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]
+        st.session_state.just_navigated = True
+        st.rerun()
 
 
 
 def set_stage(stage_name):
     """Sets the current stage directly."""
-    st.session_state.scroll_to_top = True
     # This function is kept for potential future use but is not called by the non-interactive topbar.
     if stage_name in STAGES:
         st.session_state.stage = stage_name
+        st.session_state.just_navigated = True
+        st.rerun()
 
 def set_editing_section(section_title):
     """Sets the currently edited PRD section to trigger the modal."""
@@ -664,6 +667,9 @@ def render_final_review_page():
         pdf_bytes = create_pdf(prd)
         st.download_button("📥 Download PRD as PDF", pdf_bytes, "AB_Testing_PRD.pdf", "application/pdf")
 
+if st.session_state.just_navigated:
+    scroll_to_top()
+    st.session_state.just_navigated = False
 
 # --- Main Rendering Logic ---
 render_header()

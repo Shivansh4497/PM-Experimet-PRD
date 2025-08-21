@@ -232,6 +232,7 @@ def next_stage():
     current_index = STAGES.index(st.session_state.stage)
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]
+        st.rerun()
 
 
 
@@ -241,6 +242,7 @@ def set_stage(stage_name):
     # This function is kept for potential future use but is not called by the non-interactive topbar.
     if stage_name in STAGES:
         st.session_state.stage = stage_name
+        st.rerun()
 
 def set_editing_section(section_title):
     """Sets the currently edited PRD section to trigger the modal."""
@@ -377,9 +379,9 @@ def render_intro_page():
 
     def process_intro_form():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
-        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
-        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
-        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
+        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal
+        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric
+        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area
         st.session_state.prd_data["intro_data"]["metric_type"] = st.session_state.intro_metric_type
         st.session_state.prd_data["intro_data"]["current_value"] = st.session_state.intro_current_value
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value
@@ -405,20 +407,26 @@ def render_intro_page():
                     next_stage()
         else:
             st.error("Please fill out all the fields to continue.")
+    def update_text_from_select(select_key, text_key):
+        selected_option = st.session_state[select_key]
+        if selected_option == "Other...":
+            st.session_state[text_key] = ""
+        else:
+            st.session_state[text_key] = selected_option
+
 
     with st.form("intro_form"):
         st.subheader("Business & Product Details")
         col1, col2 = st.columns(2)
         with col1:
             business_goals = ["Increase user engagement", "Improve user retention", "Increase revenue", "Other..."]
-            st.selectbox("Business Goal", business_goals, key="intro_business_goal_select")
-            if st.session_state.get("intro_business_goal_select") == "Other...":
-                st.text_input("Custom Business Goal", key="intro_business_goal")
+            st.selectbox("Business Goal (Suggestions)", business_goals, key="intro_business_goal_select", on_change=update_text_from_select, args=("intro_business_goal_select", "intro_business_goal"))
+            st.text_input("Final Business Goal", key="intro_business_goal")
 
             key_metrics = ["Login Rate", "ARPDAU", "Conversion Rate", "Click-Through Rate", "Other..."]
-            st.selectbox("Key Metric", key_metrics, key="intro_key_metric_select")
-            if st.session_state.get("intro_key_metric_select") == "Other...":
-                st.text_input("Custom Key Metric", key="intro_key_metric")
+            st.selectbox("Key Metric (Suggestions)", key_metrics, key="intro_key_metric_select", on_change=update_text_from_select, args=("intro_key_metric_select", "intro_key_metric"))
+            st.text_input("Final Key Metric", key="intro_key_metric")
+
 
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type", help="Proportion metrics are percentages (e.g., Conversion Rate). Continuous metrics are numerical averages (e.g., ARPDAU).")
             st.number_input("Current Metric Value", min_value=0.0, value=50.0, key="intro_current_value")
@@ -427,9 +435,9 @@ def render_intro_page():
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev", help="The standard deviation of your metric.")
         with col2:
             product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout", "Other..."]
-            st.selectbox("Product Area", product_areas, key="intro_product_area_select")
-            if st.session_state.get("intro_product_area_select") == "Other...":
-                st.text_input("Custom Product Area", key="intro_product_area")
+            st.selectbox("Product Area (Suggestions)", product_areas, key="intro_product_area_select", on_change=update_text_from_select, args=("intro_product_area_select", "intro_product_area"))
+            st.text_input("Final Product Area", key="intro_product_area")
+            
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, key="intro_dau")
             st.selectbox("Product Type", ["SaaS Product", "Mobile App", "Web Platform", "Other"], index=1, key="intro_product_type")

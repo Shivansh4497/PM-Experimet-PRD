@@ -739,10 +739,15 @@ def render_final_review_page():
 
 
 # --- Sidebar Navigation ---
-st.sidebar.title("Navigation")
-for s in STAGES:
-    # Use partial to pass the stage name to the callback
-    st.sidebar.button(s, key=f"nav_{s}", on_click=partial(set_stage, s))
+st.sidebar.title("Progress Tracker")
+current_stage_index = STAGES.index(st.session_state.stage)
+for i, stage in enumerate(STAGES):
+    if i < current_stage_index:
+        st.sidebar.markdown(f"✅ **{stage}**")
+    elif i == current_stage_index:
+        st.sidebar.markdown(f"➡️ **{stage}**")
+    else:
+        st.sidebar.markdown(f"⚪️ {stage}")
 
 # --- Main Rendering Logic ---
 # This part remains the same, as it correctly routes to the right page based on the stage.

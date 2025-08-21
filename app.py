@@ -213,13 +213,11 @@ if "scroll_to_top" not in st.session_state:
 
 
 def scroll_to_top():
-    """Injects JavaScript to scroll to the top of the page after a brief delay."""
+    """Injects JavaScript to jump to the top of the page using an anchor."""
     components.html(
         """
         <script>
-            setTimeout(function(){
-                window.parent.scrollTo(0, 0);
-            }, 100); // 100ms delay
+            window.parent.location.hash = "#top";
         </script>
         """,
         height=0,

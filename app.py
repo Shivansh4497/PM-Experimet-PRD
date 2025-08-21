@@ -755,6 +755,37 @@ def render_final_review_page():
             st.error(f"Error generating PDF: {e}")
 
 
+# --- Remove sidebar collapse button with JavaScript ---
+components.html("""
+<script>
+    // Function to remove the collapse button
+    function removeCollapseButton() {
+        const collapseButtons = document.querySelectorAll('button[data-testid="collapsedControl"]');
+        collapseButtons.forEach(button => {
+            button.remove();
+        });
+    }
+    
+    // Remove immediately and set up observer for dynamic content
+    removeCollapseButton();
+    
+    // Set up mutation observer to catch if button is added later
+    const observer = new MutationObserver(function(mutations) {
+        removeCollapseButton();
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: false,
+        characterData: false
+    });
+    
+    // Also check periodically (as a fallback)
+    setInterval(removeCollapseButton, 1000);
+</script>
+""", height=0, width=0)
+
 # --- Sidebar Navigation ---
 st.sidebar.title("Progress Tracker")
 current_stage_index = STAGES.index(st.session_state.stage)

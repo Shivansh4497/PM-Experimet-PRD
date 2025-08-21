@@ -148,7 +148,7 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] {
+    button[data-testid="collapsedControl"] {
         display: none !important;
     }
 </style>

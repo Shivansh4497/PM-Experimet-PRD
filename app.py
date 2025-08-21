@@ -153,6 +153,59 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+    /* HIDE SIDEBAR ON MOBILE */
+    @media (max-width: 768px) {
+        /* Hide entire sidebar on mobile */
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+        
+        /* Hide sidebar toggle buttons on mobile */
+        button[data-testid="collapsedControl"],
+        button[aria-label*="sidebar"],
+        button[title*="sidebar"] {
+            display: none !important;
+        }
+        
+        /* Adjust main content for mobile (full width) */
+        .st-emotion-cache-z5fcl4 {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+        
+        /* Hide any problematic text on mobile */
+        *:contains("keyboard_double_arrow_right"),
+        *:contains("keyboard_double_arrow_left") {
+            display: none !important;
+            visibility: hidden !important;
+            font-size: 0 !important;
+        }
+    }
+    
+    /* DESKTOP: Keep sidebar but hide collapse button */
+    @media (min-width: 769px) {
+        /* Hide the collapse button on desktop */
+        button[data-testid="collapsedControl"] {
+            display: none !important;
+        }
+        
+        /* Ensure sidebar is always expanded on desktop */
+        section[data-testid="stSidebar"] {
+            transform: translateX(0) !important;
+            visibility: visible !important;
+        }
+        
+        /* Adjust main content for permanent sidebar */
+        .st-emotion-cache-z5fcl4 {
+            padding-left: calc(300px + 1rem) !important;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # --- Constants & State Management ---
 STAGES = ["Intro", "Hypothesis", "PRD", "Calculations", "Review"]
@@ -731,6 +784,48 @@ def render_final_review_page():
         except Exception as e:
             st.error(f"Error generating PDF: {e}")
 
+# --- ADD THIS JAVASCRIPT RIGHT BEFORE SIDEBAR CODE ---
+components.html("""
+<script>
+    function handleResponsiveSidebar() {
+        const isMobile = window.innerWidth <= 768;
+        
+        if (isMobile) {
+            // MOBILE: Hide sidebar and toggle buttons
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                sidebar.style.display = 'none';
+            }
+            
+            const toggleButtons = document.querySelectorAll('button');
+            toggleButtons.forEach(btn => {
+                const label = btn.getAttribute('aria-label') || '';
+                const title = btn.getAttribute('title') || '';
+                if (label.includes('sidebar') || title.includes('sidebar')) {
+                    btn.style.display = 'none';
+                }
+            });
+        } else {
+            // DESKTOP: Ensure sidebar is visible but hide toggle button
+            const sidebar = document.querySelector('[data-testid="stSidebar"]');
+            if (sidebar) {
+                sidebar.style.display = '';
+                sidebar.style.transform = 'translateX(0)';
+            }
+            
+            const collapseButton = document.querySelector('[data-testid="collapsedControl"]');
+            if (collapseButton) {
+                collapseButton.style.display = 'none';
+            }
+        }
+    }
+    
+    // Run on load and resize
+    handleResponsiveSidebar();
+    window.addEventListener('resize', handleResponsiveSidebar);
+    setInterval(handleResponsiveSidebar, 1000);
+</script>
+""", height=0)
 
 # --- Sidebar Navigation ---
 with st.container():

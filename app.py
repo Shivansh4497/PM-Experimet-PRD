@@ -803,4 +803,3 @@ elif st.session_state.stage == "Calculations":
     render_calculations_page()
 elif st.session_state.stage == "Review":
     render_final_review_page()
-�

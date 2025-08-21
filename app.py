@@ -148,14 +148,7 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    button[data-testid="stSidebarNavCollapseButton"] > * {
-        display: none !important;
-    }
-    button[data-testid="stSidebarNavCollapseButton"]::after {
-        content: '→' !important;
-        font-size: 1.5rem;
-        display: block !important;
-    }
+    
 </style>
 """, unsafe_allow_html=True)
 

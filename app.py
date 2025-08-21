@@ -731,7 +731,7 @@ def render_final_review_page():
         except Exception as e:
             st.error(f"Error generating PDF: {e}")
 
-/*
+'''
 # --- Sidebar Navigation ---
 st.sidebar.title("Progress Tracker")
 current_stage_index = STAGES.index(st.session_state.stage)
@@ -742,7 +742,7 @@ for i, stage in enumerate(STAGES):
         st.sidebar.markdown(f"➡️ **{stage}**")
     else:
         st.sidebar.markdown(f"⚪️ {stage}")
-*/
+'''
 # --- Main Rendering Logic ---
 # This part remains the same, as it correctly routes to the right page based on the stage.
 if st.session_state.stage == "Intro":

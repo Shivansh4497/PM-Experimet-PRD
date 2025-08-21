@@ -177,16 +177,16 @@ if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
 # --- Helper & Callback Functions ---
-def scroll_to_top():
-    """Injects JavaScript to scroll to the top of the page."""
-    components.html(
-        """
-        <script>
-            window.parent.scrollTo(0, 0);
-        </script>
-        """,
-        height=0,
-    )
+#def scroll_to_top():
+   # """Injects JavaScript to scroll to the top of the page."""
+    #components.html(
+     #   """
+      #  <script>
+       #     window.parent.scrollTo(0, 0);
+        #</script>
+        #""",
+       # height=0,
+    #)
 
 def next_stage():
     """Navigates to the next stage in the process."""
@@ -305,7 +305,7 @@ def edit_summary_dialog():
 # --- UI Rendering Functions ---
 
 def render_intro_page():
-    scroll_to_top()
+    #scroll_to_top()
     st.header("Step 1: The Basics 📝")
     st.info("""
         **Welcome!** Let's start by gathering some high-level details about your A/B test. 
@@ -324,8 +324,8 @@ def render_intro_page():
         st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
         st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
         
-        st.session_state.prd_data["intro_data"]["metric_type"] = st.session_state.intro_metric_type
         st.session_state.prd_data["intro_data"]["current_value"] = st.session_state.intro_current_value
+        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value
         st.session_state.prd_data["intro_data"]["dau"] = st.session_state.intro_dau
         st.session_state.prd_data["intro_data"]["product_type"] = st.session_state.intro_product_type
@@ -377,13 +377,11 @@ def render_intro_page():
             if st.session_state.get("intro_metric_type") == "Continuous":
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev",
                                 help="The standard deviation measures the dispersion of your data around the mean. You can typically find this in your analytics dashboard or by calculating it from historical data.")
-
         with col2:
             product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout", "Other..."]
             st.selectbox("Product Area", product_areas, key="intro_product_area_select")
             if st.session_state.get("intro_product_area_select") == "Other...":
                 st.text_input("Custom Product Area", key="intro_product_area")
-
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, help="The value you are aiming for.", key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, help="The total number of unique users daily.", key="intro_dau")
             st.selectbox("Product Type", ["SaaS Product", "Mobile App", "Web Platform", "Other"], index=1, key="intro_product_type")
@@ -396,7 +394,7 @@ def render_intro_page():
 
 
 def render_hypothesis_page():
-    scroll_to_top()
+    #scroll_to_top()
     st.header("Step 2: Hypotheses 🧠")
     st.info("""
         **What is a Hypothesis?** A hypothesis is a clear, testable statement about the expected outcome of your experiment. 
@@ -472,7 +470,7 @@ def render_hypothesis_page():
 
 
 def render_prd_page():
-    scroll_to_top()
+    #scroll_to_top()
     st.header("Step 3: PRD Draft ✍️")
     st.info("We've drafted the core sections of your PRD. Please review, edit, and finalize them.")
     
@@ -527,7 +525,7 @@ def render_prd_page():
 
 
 def render_calculations_page():
-    scroll_to_top()
+    #scroll_to_top()
     if not CALCULATIONS_AVAILABLE:
         st.error(f"⚠️ Experiment calculations are unavailable. Dependency error: {CALC_ERROR_MSG}")
         return
@@ -605,7 +603,7 @@ def render_calculations_page():
 
 
 def render_final_review_page():
-    scroll_to_top()
+    #scroll_to_top()
     st.header("Step 5: Final Review & Export 🎉")
     st.info("Your complete PRD is ready. Review, polish, and export.")
 

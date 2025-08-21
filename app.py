@@ -153,27 +153,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-components.html("""
-<script>
-    // Function to remove the collapse button
-    function removeCollapseButton() {
-        const collapseButton = document.querySelector('button[data-testid="collapsedControl"]');
-        if (collapseButton) {
-            collapseButton.remove();
-        }
-    }
-    
-    // Try to remove immediately and also set up a mutation observer
-    removeCollapseButton();
-    
-    // Set up observer to catch if the button is added later
-    const observer = new MutationObserver(removeCollapseButton);
-    observer.observe(document.body, { childList: true, subtree: true });
-    
-    // Also try on interval in case the button is created after observer starts
-    setInterval(removeCollapseButton, 1000);
-</script>
-""", height=0)
 
 # --- Constants & State Management ---
 STAGES = ["Intro", "Hypothesis", "PRD", "Calculations", "Review"]

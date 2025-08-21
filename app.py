@@ -50,7 +50,7 @@ except ImportError as e:
     CALC_ERROR_MSG = str(e)
 
 # Set the page layout to wide
-st.set_page_config(layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(layout="wide")
 
 # --- Custom CSS for a Polished UI ---
 st.markdown("""
@@ -148,7 +148,14 @@ st.markdown("""
         padding-right: 1rem;
         padding-top: 1rem;
     }
-    
+    button[data-testid="stSidebarNavCollapseButton"] > * {
+        display: none !important;
+    }
+    button[data-testid="stSidebarNavCollapseButton"]::after {
+        content: '→' !important;
+        font-size: 1.5rem;
+        display: block !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 

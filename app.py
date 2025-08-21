@@ -209,14 +209,28 @@ if "editing_section" not in st.session_state:
 if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
 
+def scroll_to_top():
+    """Injects JavaScript to scroll to the top of the page."""
+    components.html(
+        """
+        <script>
+            window.parent.scrollTo(0, 0);
+        </script>
+        """,
+        height=0,
+    )
+    
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
+    scroll_to_top()
     st.session_state.editing_section = None
     st.session_state.editing_risk = None
     current_index = STAGES.index(st.session_state.stage)
     if current_index < len(STAGES) - 1:
         st.session_state.stage = STAGES[current_index + 1]
+
+
 
 def set_stage(stage_name):
     """Sets the current stage directly."""
@@ -481,6 +495,8 @@ def render_hypothesis_page():
                     st.subheader(f"Hypothesis {i+1}")
                     st.markdown(f"**Statement:** {data.get('Statement', 'N/A')}")
                     st.markdown(f"**Rationale:** {data.get('Rationale', 'N/A')}")
+                    st.markdown(f"**Behavioral Basis:** {data.get('Behavioral Basis', 'N/A')}")
+
                     st.button(f"Select & Continue", key=f"select_{i}", on_click=select_hypothesis, args=(data,))
 
 

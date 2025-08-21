@@ -417,10 +417,10 @@ def render_intro_page():
         st.subheader("Business & Product Details")
         col1, col2 = st.columns(2)
         with col1:
-            st.text_input("Business Goal",placeholder="e.g., A mobile app for tracking water intake...", key="intro_business_goal")
+            st.text_input("Business Goal",placeholder="e.g., Increase new user activation", key="intro_business_goal")
             
 
-            st.text_input("Key Metric",placeholder="e.g., A mobile app for tracking water intake...", key="intro_key_metric")
+            st.text_input("Key Metric",placeholder="e.g., Sign-up to first action conversion rate", key="intro_key_metric")
             
 
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type", help="Proportion metrics are percentages (e.g., Conversion Rate). Continuous metrics are numerical averages (e.g., ARPDAU).")
@@ -429,7 +429,7 @@ def render_intro_page():
             if st.session_state.get("intro_metric_type") == "Continuous":
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev", help="The standard deviation of your metric.")
         with col2:
-            st.text_input("Product Area",placeholder="e.g., A mobile app for tracking water intake...", key="intro_product_area")
+            st.text_input("Product Area",placeholder="e.g., New user onboarding flow", key="intro_product_area")
             
 
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, key="intro_target_value")

@@ -57,10 +57,18 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
     
-    /* Hide the sidebar collapse icon text by targeting any child element that is not the SVG icon */
-    button[data-testid="stSidebarNavCollapseButton"] > *:not(svg) {
-        display: none;
+    //* On desktop, hide the collapse button to make the sidebar permanent */
+    @media (min-width: 769px) {
+        button[data-testid="stSidebarNavCollapseButton"] {
+            display: none !important;
+        }
     }
+
+    /* On mobile, hide the entire sidebar */
+    @media (max-width: 768px) {
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
 
     html, body, [class*="st-"] {
         font-family: 'Roboto', sans-serif;

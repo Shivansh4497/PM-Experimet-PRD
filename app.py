@@ -379,9 +379,9 @@ def render_intro_page():
 
     def process_intro_form():
         """Callback to process the intro form, generate hypotheses, and move to the next stage."""
-        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal
-        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric
-        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area
+        st.session_state.prd_data["intro_data"]["business_goal"] = st.session_state.intro_business_goal_custom if st.session_state.intro_business_goal_select == "Other..." else st.session_state.intro_business_goal_select
+        st.session_state.prd_data["intro_data"]["key_metric"] = st.session_state.intro_key_metric_custom if st.session_state.intro_key_metric_select == "Other..." else st.session_state.intro_key_metric_select
+        st.session_state.prd_data["intro_data"]["product_area"] = st.session_state.intro_product_area_custom if st.session_state.intro_product_area_select == "Other..." else st.session_state.intro_product_area_select
         st.session_state.prd_data["intro_data"]["metric_type"] = st.session_state.intro_metric_type
         st.session_state.prd_data["intro_data"]["current_value"] = st.session_state.intro_current_value
         st.session_state.prd_data["intro_data"]["target_value"] = st.session_state.intro_target_value
@@ -420,12 +420,15 @@ def render_intro_page():
         col1, col2 = st.columns(2)
         with col1:
             business_goals = ["Increase user engagement", "Improve user retention", "Increase revenue", "Other..."]
-            st.selectbox("Business Goal (Suggestions)", business_goals, key="intro_business_goal_select", on_change=update_text_from_select, args=("intro_business_goal_select", "intro_business_goal"))
-            st.text_input("Final Business Goal", key="intro_business_goal")
+            st.selectbox("Business Goal", business_goals, key="intro_business_goal_select")
+            if st.session_state.get("intro_business_goal_select") == "Other...":
+                st.text_input("Custom Business Goal", key="intro_business_goal_custom")
+
 
             key_metrics = ["Login Rate", "ARPDAU", "Conversion Rate", "Click-Through Rate", "Other..."]
-            st.selectbox("Key Metric (Suggestions)", key_metrics, key="intro_key_metric_select", on_change=update_text_from_select, args=("intro_key_metric_select", "intro_key_metric"))
-            st.text_input("Final Key Metric", key="intro_key_metric")
+            st.selectbox("Key Metric", key_metrics, key="intro_key_metric_select")
+            if st.session_state.get("intro_key_metric_select") == "Other...":
+                st.text_input("Custom Key Metric", key="intro_key_metric_custom")
 
 
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type", help="Proportion metrics are percentages (e.g., Conversion Rate). Continuous metrics are numerical averages (e.g., ARPDAU).")
@@ -435,9 +438,11 @@ def render_intro_page():
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev", help="The standard deviation of your metric.")
         with col2:
             product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout", "Other..."]
-            st.selectbox("Product Area (Suggestions)", product_areas, key="intro_product_area_select", on_change=update_text_from_select, args=("intro_product_area_select", "intro_product_area"))
-            st.text_input("Final Product Area", key="intro_product_area")
-            
+            st.selectbox("Product Area", product_areas, key="intro_product_area_select")
+            if st.session_state.get("intro_product_area_select") == "Other...":
+                st.text_input("Custom Product Area", key="intro_product_area_custom")
+
+
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, key="intro_dau")
             st.selectbox("Product Type", ["SaaS Product", "Mobile App", "Web Platform", "Other"], index=1, key="intro_product_type")

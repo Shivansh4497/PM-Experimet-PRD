@@ -8,30 +8,6 @@ import streamlit.components.v1 as components
 # Note: Ensure you have these utility files in a 'utils' folder.
 # For this example, placeholder functions will be used if imports fail.
 
-# --- Option Lists ---
-business_goals = [
-    "Increase retention",
-    "Boost DAU",
-    "Improve conversion",
-    "Monetization growth"
-]
-
-product_areas = [
-    "Onboarding",
-    "Search",
-    "Recommendations",
-    "Payments",
-    "Notifications"
-]
-
-metrics = [
-    "DAU",
-    "WAU",
-    "Retention D30",
-    "CTR",
-    "Revenue per user"
-]
-
 try:
     from utils.api_handler import generate_content
     from utils.calculations import calculate_sample_size_proportion, calculate_sample_size_continuous, calculate_duration
@@ -175,24 +151,7 @@ st.markdown("""
         background-color: #2ea043;
         transform: scale(1.05);
     }
-    /* --- SUGGESTION BUTTON STYLES --- */
-    .suggestion-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 1rem;
-    }
-    .suggestion-buttons .stButton > button {
-        background-color: #21262d;
-        border: 1px solid #30363d;
-        font-size: 0.8rem;
-        padding: 4px 10px;
-        min-height: auto;
-    }
-    .suggestion-buttons .stButton > button:hover {
-        border-color: #8b949e;
-        color: #c9d1d9;
-    }
+    
     /* Additional restored styles */
     .st-emotion-cache-18ni7ap, .st-emotion-cache-1r6r8k {
         background-color: transparent !important;
@@ -451,15 +410,6 @@ def render_intro_page():
                     next_stage()
         else:
             st.error("Please fill out all the fields to continue.")
-    def suggestion_buttons(options, text_key):
-        st.markdown('<div class="suggestion-buttons">', unsafe_allow_html=True)
-        cols = st.columns(len(options))
-        for i, option in enumerate(options):
-            with cols[i]:
-                if st.button(option, key=f"{text_key}_{option}"):
-                    st.session_state[text_key] = option
-                    st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
 
 
 
@@ -467,13 +417,11 @@ def render_intro_page():
         st.subheader("Business & Product Details")
         col1, col2 = st.columns(2)
         with col1:
-            st.text_input("Business Goal", key="intro_business_goal")
-            business_goals = ["Increase user engagement", "Improve user retention", "Increase revenue"]
-            suggestion_buttons(business_goals, "intro_business_goal")
+            st.text_input("Business Goal",placeholder="e.g., A mobile app for tracking water intake...", key="intro_business_goal")
+            
 
-            st.text_input("Key Metric", key="intro_key_metric")
-            key_metrics = ["Login Rate", "ARPDAU", "Conversion Rate", "Click-Through Rate"]
-            suggestion_buttons(key_metrics, "intro_key_metric")
+            st.text_input("Key Metric",placeholder="e.g., A mobile app for tracking water intake...", key="intro_key_metric")
+            
 
             st.selectbox("Metric Type", ["Proportion", "Continuous"], key="intro_metric_type", help="Proportion metrics are percentages (e.g., Conversion Rate). Continuous metrics are numerical averages (e.g., ARPDAU).")
             st.number_input("Current Metric Value", min_value=0.0, value=50.0, key="intro_current_value")
@@ -481,9 +429,8 @@ def render_intro_page():
             if st.session_state.get("intro_metric_type") == "Continuous":
                 st.number_input("Standard Deviation", min_value=0.0, value=10.0, key="intro_std_dev", help="The standard deviation of your metric.")
         with col2:
-            st.text_input("Product Area", key="intro_product_area")
-            product_areas = ["Mobile App Onboarding", "Web App Dashboard", "E-commerce Checkout"]
-            suggestion_buttons(product_areas, "intro_product_area")
+            st.text_input("Product Area",placeholder="e.g., A mobile app for tracking water intake...", key="intro_product_area")
+            
 
             st.number_input("Target Metric Value", min_value=0.0, value=55.0, key="intro_target_value")
             st.number_input("Daily Active Users (DAU)", min_value=100, value=10000, key="intro_dau")

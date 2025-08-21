@@ -208,8 +208,7 @@ if "editing_section" not in st.session_state:
     st.session_state.editing_section = None
 if "editing_risk" not in st.session_state:
     st.session_state.editing_risk = None
-if "scroll_to_top" not in st.session_state:
-    st.session_state.scroll_to_top = False
+
 
 def scroll_to_top():
     """Injects JavaScript to scroll to the top of the page."""
@@ -225,7 +224,7 @@ def scroll_to_top():
 # --- Helper & Callback Functions ---
 def next_stage():
     """Navigates to the next stage in the process."""
-    st.session_state.scroll_to_top = True
+
     st.session_state.editing_section = None
     st.session_state.editing_risk = None
     current_index = STAGES.index(st.session_state.stage)
@@ -236,7 +235,7 @@ def next_stage():
 
 def set_stage(stage_name):
     """Sets the current stage directly."""
-    st.session_state.scroll_to_top = True
+
     # This function is kept for potential future use but is not called by the non-interactive topbar.
     if stage_name in STAGES:
         st.session_state.stage = stage_name

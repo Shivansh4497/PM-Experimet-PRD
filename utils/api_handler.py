@@ -44,6 +44,7 @@ def generate_content(api_key, data, mode="hypotheses"):
             Inputs: {json.dumps(data, indent=2)}
             Each hypothesis should be a JSON object with "Statement", "Rationale", and "Behavioral Basis".
             Return a single JSON object with keys "Hypothesis 1" and "Hypothesis 2".
+            Do not use any special character that could mess up json parsing in your answer whatsoever.
             """
         elif mode == "prd_sections":
             optional_context = ""
@@ -62,6 +63,7 @@ def generate_content(api_key, data, mode="hypotheses"):
             The keys of this object MUST be exactly "Problem_Statement", "Goal_and_Success_Metrics", and "Implementation_Plan".
             The value for "Problem_Statement" and "Goal_and_Success_Metrics" should be a string.
             The value for "Implementation_Plan" MUST be a list of strings, where each string is a distinct step.
+            Do not use any special character that could mess up json parsing in your answer whatsoever.
             """
         elif mode == "enrich_hypothesis":
             optional_context = ""
@@ -78,6 +80,7 @@ def generate_content(api_key, data, mode="hypotheses"):
             Use the following context to make it more specific and relevant.
             Context: {json.dumps(data, indent=2)}
             Return JSON with: "Statement", "Rationale", "Behavioral Basis". The "Statement" should be the enriched version of the custom hypothesis.
+            Do not use any special character that could mess up json parsing in your answer whatsoever.
             """
         elif mode == "risks":
             optional_context = ""
@@ -99,6 +102,7 @@ def generate_content(api_key, data, mode="hypotheses"):
             Return a JSON object with a single key "risks", which is a list of objects.
             Each object in the list should have two keys: "risk" and "mitigation".
             Example: {{"risks": [{{"risk": "...", "mitigation": "..."}}]}}
+            Do not use any special character that could mess up json parsing in your answer whatsoever.
             """
         else:
             return {"error": f"Invalid mode '{mode}'"}
